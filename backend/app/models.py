@@ -9,9 +9,11 @@ from sqlalchemy.sql import func
 from .database import Base
 
 
-class PersonType(str, enum.Enum):
+class SpeakerType(str, enum.Enum):
     elected = "elected"
     staff = "staff"
+    think_tank = "think_tank"
+    gov_inst = "gov_inst"
 
 
 class Party(str, enum.Enum):
@@ -33,7 +35,7 @@ class Person(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    type: Mapped[PersonType] = mapped_column(Enum(PersonType), nullable=False)
+    type: Mapped[SpeakerType] = mapped_column(Enum(SpeakerType), nullable=False)
     party: Mapped[Optional[Party]] = mapped_column(Enum(Party), nullable=True)
     role: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     chamber: Mapped[Optional[Chamber]] = mapped_column(Enum(Chamber), nullable=True)

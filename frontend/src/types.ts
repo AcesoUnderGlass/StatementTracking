@@ -1,7 +1,9 @@
+export type SpeakerType = 'elected' | 'staff' | 'think_tank' | 'gov_inst';
+
 export interface Person {
   id: number;
   name: string;
-  type: 'elected' | 'staff';
+  type: SpeakerType;
   party: string | null;
   role: string | null;
   chamber: string | null;
@@ -15,7 +17,7 @@ export interface Person {
 
 export interface PersonCreate {
   name: string;
-  type: 'elected' | 'staff';
+  type: SpeakerType;
   party?: string | null;
   role?: string | null;
   chamber?: string | null;
@@ -34,6 +36,7 @@ export interface ArticleMetadata {
 export interface ExtractedQuote {
   speaker_name: string;
   speaker_title: string | null;
+  speaker_type: SpeakerType | null;
   quote_text: string;
   context: string | null;
 }

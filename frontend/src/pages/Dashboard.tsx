@@ -57,7 +57,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <StatCard label="Total Quotes" value={stats.total_quotes} />
-        <StatCard label="Total People" value={stats.total_people} />
+        <StatCard label="Total Speakers" value={stats.total_people} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

@@ -29,12 +29,13 @@ export default function SubmitArticle() {
         res.quotes.map((q) => ({
           speaker_name: q.speaker_name,
           speaker_title: q.speaker_title,
+          speaker_type: q.speaker_type || 'elected',
           quote_text: q.quote_text,
           context: q.context,
           approved: true,
           person_id: null,
           new_person: q.speaker_name
-            ? { name: q.speaker_name, type: 'elected', role: q.speaker_title || null }
+            ? { name: q.speaker_name, type: q.speaker_type || 'elected', role: q.speaker_title || null }
             : null,
         })),
       );
@@ -67,7 +68,7 @@ export default function SubmitArticle() {
     const missing = approved.filter((q) => !q.person_id && !q.new_person);
     if (missing.length > 0) {
       setError(
-        `${missing.length} approved quote(s) have no speaker assigned. Use the search to match or create a new person.`,
+        `${missing.length} approved quote(s) have no speaker assigned. Use the search to match or create a new speaker.`,
       );
       return;
     }
@@ -105,7 +106,7 @@ export default function SubmitArticle() {
     <div>
       <h2 className="text-2xl font-bold text-slate-900 mb-1">Submit Article</h2>
       <p className="text-sm text-slate-500 mb-6">
-        Paste a news article URL to extract AI-related quotes from politicians.
+        Paste a news article URL to extract AI-related quotes.
       </p>
 
       {error && (

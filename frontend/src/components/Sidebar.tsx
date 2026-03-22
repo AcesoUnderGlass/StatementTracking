@@ -4,7 +4,7 @@ const links = [
   { to: '/dashboard', label: 'Dashboard', icon: '▦' },
   { to: '/submit', label: 'Submit Article', icon: '＋' },
   { to: '/quotes', label: 'Quotes', icon: '❝' },
-  { to: '/people', label: 'People', icon: '◉' },
+  { to: '/people', label: 'Speakers', icon: '◉' },
 ];
 
 export default function Sidebar() {

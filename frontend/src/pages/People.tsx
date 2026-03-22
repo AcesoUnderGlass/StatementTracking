@@ -18,11 +18,18 @@ export default function People() {
     Independent: 'bg-purple-100 text-purple-700',
   };
 
+  const typeLabel: Record<string, string> = {
+    elected: 'Elected',
+    staff: 'Staff',
+    think_tank: 'Think Tank',
+    gov_inst: 'Gov. Institution',
+  };
+
   return (
     <div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-1">People</h2>
+      <h2 className="text-2xl font-bold text-slate-900 mb-1">Speakers</h2>
       <p className="text-sm text-slate-500 mb-6">
-        All politicians and staff tracked in the system.
+        All speakers and institutions tracked in the system.
       </p>
 
       <input
@@ -64,7 +71,7 @@ export default function People() {
                   className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
                 >
                   <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
-                  <td className="px-4 py-3 text-slate-500 capitalize">{p.type}</td>
+                  <td className="px-4 py-3 text-slate-500">{typeLabel[p.type] || p.type}</td>
                   <td className="px-4 py-3">
                     {p.party ? (
                       <span
@@ -88,7 +95,7 @@ export default function People() {
               {people?.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-slate-400">
-                    No people found.
+                    No speakers found.
                   </td>
                 </tr>
               )}

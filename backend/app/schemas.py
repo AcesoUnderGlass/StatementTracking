@@ -64,6 +64,7 @@ class ArticleOut(BaseModel):
 class ExtractedQuote(BaseModel):
     speaker_name: str
     speaker_title: Optional[str] = None
+    speaker_type: Optional[str] = None
     quote_text: str
     context: Optional[str] = None
 

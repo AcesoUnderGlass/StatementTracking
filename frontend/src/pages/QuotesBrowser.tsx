@@ -55,7 +55,7 @@ export default function QuotesBrowser() {
     <div>
       <h2 className="text-2xl font-bold text-slate-900 mb-1">Quotes</h2>
       <p className="text-sm text-slate-500 mb-6">
-        Browse and filter AI-related quotes from politicians.
+        Browse and filter AI-related quotes from all tracked speakers.
       </p>
 
       <FilterBar filters={filters} onChange={setFilters} />

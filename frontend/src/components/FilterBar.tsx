@@ -41,6 +41,8 @@ export default function FilterBar({ filters, onChange }: Props) {
         <option value="">All types</option>
         <option value="elected">Elected</option>
         <option value="staff">Staff</option>
+        <option value="think_tank">Think Tank</option>
+        <option value="gov_inst">Gov. Institution</option>
       </select>
 
       <input

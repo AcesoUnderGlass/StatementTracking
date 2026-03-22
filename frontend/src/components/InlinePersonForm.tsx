@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { PersonCreate } from '../types';
+import type { PersonCreate, SpeakerType } from '../types';
 
 interface Props {
   defaultName?: string;
+  defaultType?: SpeakerType;
   onSave: (person: PersonCreate) => void;
   onCancel: () => void;
 }
@@ -16,10 +17,12 @@ const US_STATES = [
   'VA','WA','WV','WI','WY','DC',
 ];
 
-export default function InlinePersonForm({ defaultName = '', onSave, onCancel }: Props) {
+const IS_ORG_TYPE = (t: SpeakerType) => t === 'think_tank' || t === 'gov_inst';
+
+export default function InlinePersonForm({ defaultName = '', defaultType = 'elected', onSave, onCancel }: Props) {
   const [form, setForm] = useState<PersonCreate>({
     name: defaultName,
-    type: 'elected',
+    type: defaultType,
     party: null,
     role: null,
     chamber: null,
@@ -27,8 +30,17 @@ export default function InlinePersonForm({ defaultName = '', onSave, onCancel }:
     employer: null,
   });
 
+  const isOrg = IS_ORG_TYPE(form.type);
+
   function update(field: string, value: string | null) {
-    setForm((prev) => ({ ...prev, [field]: value || null }));
+    const next: Partial<PersonCreate> = { [field]: value || null };
+    if (field === 'type' && value && IS_ORG_TYPE(value as SpeakerType)) {
+      next.party = null;
+      next.chamber = null;
+      next.state = null;
+      next.employer = null;
+    }
+    setForm((prev) => ({ ...prev, ...next }));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -43,7 +55,7 @@ export default function InlinePersonForm({ defaultName = '', onSave, onCancel }:
       className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3"
     >
       <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-        New Person
+        New Speaker
       </p>
 
       <div className="grid grid-cols-2 gap-2">
@@ -52,7 +64,7 @@ export default function InlinePersonForm({ defaultName = '', onSave, onCancel }:
             type="text"
             value={form.name}
             onChange={(e) => update('name', e.target.value)}
-            placeholder="Full name"
+            placeholder={isOrg ? 'Organization name' : 'Full name'}
             className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-sm"
             required
           />
@@ -65,42 +77,50 @@ export default function InlinePersonForm({ defaultName = '', onSave, onCancel }:
         >
           <option value="elected">Elected</option>
           <option value="staff">Staff</option>
+          <option value="think_tank">Think Tank</option>
+          <option value="gov_inst">Gov. Institution</option>
         </select>
 
-        <select
-          value={form.party || ''}
-          onChange={(e) => update('party', e.target.value)}
-          className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
-        >
-          <option value="">Party...</option>
-          {PARTIES.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
+        {!isOrg && (
+          <select
+            value={form.party || ''}
+            onChange={(e) => update('party', e.target.value)}
+            className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
+          >
+            <option value="">Party...</option>
+            {PARTIES.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        )}
 
         <input
           type="text"
           value={form.role || ''}
           onChange={(e) => update('role', e.target.value)}
-          placeholder="Role (e.g. Senator)"
+          placeholder={isOrg ? 'Description (e.g. Federal Agency)' : 'Role (e.g. Senator)'}
           className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
         />
 
-        <select
-          value={form.chamber || ''}
-          onChange={(e) => update('chamber', e.target.value)}
-          className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
-        >
-          <option value="">Chamber...</option>
-          {CHAMBERS.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        {!isOrg && (
+          <>
+            <select
+              value={form.chamber || ''}
+              onChange={(e) => update('chamber', e.target.value)}
+              className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
+            >
+              <option value="">Chamber...</option>
+              {CHAMBERS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
 
-        <select
-          value={form.state || ''}
-          onChange={(e) => update('state', e.target.value)}
-          className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
-        >
-          <option value="">State...</option>
-          {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
+            <select
+              value={form.state || ''}
+              onChange={(e) => update('state', e.target.value)}
+              className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
+            >
+              <option value="">State...</option>
+              {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </>
+        )}
 
         {form.type === 'staff' && (
           <input
@@ -118,7 +138,7 @@ export default function InlinePersonForm({ defaultName = '', onSave, onCancel }:
           type="submit"
           className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 font-medium"
         >
-          Create Person
+          Create Speaker
         </button>
         <button
           type="button"

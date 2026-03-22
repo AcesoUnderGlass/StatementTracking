@@ -10,10 +10,16 @@ load_dotenv()
 SYSTEM_PROMPT = (
     "You are extracting direct quotes from news articles. Return only exact quoted "
     "speech (text that appears in quotation marks in the original article) from "
-    "politicians, government officials, or their staff members, where the quote "
-    "discusses artificial intelligence in any context. For each quote return: the full "
-    "quoted text, the name and title of the speaker as identified in the article, and "
-    "one to two sentences of surrounding context. "
+    "policymakers, government officials, government institutions, think tanks, or "
+    "their staff members, where the quote discusses artificial intelligence in any "
+    "context. For each quote return: the full quoted text, the name and title of the "
+    "speaker as identified in the article, the speaker_type classification, and one "
+    "to two sentences of surrounding context. "
+    "speaker_type must be one of: 'elected' (elected officials), 'staff' (government "
+    "or organizational staff), 'think_tank' (think tanks or research organizations), "
+    "or 'gov_inst' (government agencies or institutions). When the quote is attributed "
+    "to an organization rather than a named individual, use the organization name as "
+    "speaker_name and its description as speaker_title. "
     "News articles frequently interrupt a single continuous quote with attribution text "
     "(e.g. 'said Senator X' or 'she continued'). When a speaker's quoted text is "
     "interrupted by attribution but resumes in the same paragraph or immediately "
@@ -24,7 +30,7 @@ SYSTEM_PROMPT = (
     "article. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"quote_text": string, "context": string }] }'
+    '"speaker_type": string, "quote_text": string, "context": string }] }'
 )
 
 

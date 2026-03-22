@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchPeople } from '../api/client';
-import type { Person, PersonCreate } from '../types';
+import type { Person, PersonCreate, SpeakerType } from '../types';
 import InlinePersonForm from './InlinePersonForm';
 
 interface Props {
   initialName?: string;
+  defaultType?: SpeakerType;
   onSelect: (personId: number) => void;
   onCreateNew: (person: PersonCreate) => void;
   onClear?: () => void;
@@ -14,6 +15,7 @@ interface Props {
 
 export default function PersonTypeahead({
   initialName = '',
+  defaultType,
   onSelect,
   onCreateNew,
   onClear,
@@ -86,7 +88,7 @@ export default function PersonTypeahead({
         value={query}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => { if (results.length > 0 && !selectedName) setOpen(true); }}
-        placeholder="Search people..."
+        placeholder="Search speakers..."
         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
       {selectedName && (
@@ -114,7 +116,7 @@ export default function PersonTypeahead({
             onClick={() => { setShowCreate(true); setOpen(false); }}
             className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-slate-100 font-medium"
           >
-            + Create new person
+            + Create new speaker
           </button>
         </div>
       )}
@@ -122,6 +124,7 @@ export default function PersonTypeahead({
       {showCreate && (
         <InlinePersonForm
           defaultName={query}
+          defaultType={defaultType}
           onSave={handleCreateNew}
           onCancel={() => setShowCreate(false)}
         />

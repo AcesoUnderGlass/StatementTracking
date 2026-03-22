@@ -47,7 +47,7 @@ export default function PersonProfile() {
   if (error || !person) {
     return (
       <div className="px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-        {(error as Error)?.message || 'Person not found.'}
+        {(error as Error)?.message || 'Speaker not found.'}
       </div>
     );
   }
@@ -74,7 +74,7 @@ export default function PersonProfile() {
         to="/people"
         className="text-sm text-blue-600 hover:text-blue-800 mb-4 inline-block"
       >
-        ← Back to People
+        ← Back to Speakers
       </Link>
 
       <div className="flex items-center gap-4 mb-6">

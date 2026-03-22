@@ -1,9 +1,10 @@
 import PersonTypeahead from './PersonTypeahead';
-import type { PersonCreate } from '../types';
+import type { PersonCreate, SpeakerType } from '../types';
 
 export interface QuoteCardData {
   speaker_name: string;
   speaker_title: string | null;
+  speaker_type: SpeakerType | null;
   quote_text: string;
   context: string | null;
   approved: boolean;
@@ -31,6 +32,7 @@ export default function QuoteCard({ data, index, onChange, onDelete }: Props) {
         <div className="flex-1 mr-4">
           <PersonTypeahead
             initialName={data.speaker_name}
+            defaultType={data.speaker_type || undefined}
             selectedPersonId={data.person_id}
             hasAssignment={!!(data.person_id || data.new_person)}
             onSelect={(personId) =>

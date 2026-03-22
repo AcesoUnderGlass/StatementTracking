@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Article, Person, PersonType, Party, Chamber, Quote
+from ..models import Article, Person, SpeakerType, Party, Chamber, Quote
 from ..schemas import (
     ExtractRequest,
     ExtractResponse,
@@ -33,6 +33,7 @@ def extract_from_url(req: ExtractRequest):
         ExtractedQuote(
             speaker_name=q.get("speaker_name", "Unknown"),
             speaker_title=q.get("speaker_title"),
+            speaker_type=q.get("speaker_type"),
             quote_text=q.get("quote_text", ""),
             context=q.get("context"),
         )
@@ -82,7 +83,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
                 else:
                     person = Person(
                         name=q.new_person.name,
-                        type=PersonType(q.new_person.type),
+                        type=SpeakerType(q.new_person.type),
                         party=Party(q.new_person.party) if q.new_person.party else None,
                         role=q.new_person.role,
                         chamber=Chamber(q.new_person.chamber) if q.new_person.chamber else None,
