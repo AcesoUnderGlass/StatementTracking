@@ -4,15 +4,19 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-from app.database import Base
+from app.database import DATABASE_URL, Base
 from app.models import Person, Article, Quote  # noqa: F401
 
 config = context.config
+
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
+use_batch = DATABASE_URL.startswith("sqlite")
 
 
 def run_migrations_offline() -> None:
@@ -35,7 +39,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True,
+            render_as_batch=use_batch,
         )
         with context.begin_transaction():
             context.run_migrations()
@@ -50,7 +54,7 @@ def run_migrations_online() -> None:
             context.configure(
                 connection=connection,
                 target_metadata=target_metadata,
-                render_as_batch=True,
+                render_as_batch=use_batch,
             )
 
             with context.begin_transaction():

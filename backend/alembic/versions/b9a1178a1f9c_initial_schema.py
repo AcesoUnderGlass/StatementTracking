@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: 0f00667952f4
+Revision ID: b9a1178a1f9c
 Revises: 
-Create Date: 2026-03-21 20:31:41.546201
+Create Date: 2026-03-22 21:02:49.790002
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0f00667952f4'
+revision: str = 'b9a1178a1f9c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,22 +27,22 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=512), nullable=True),
     sa.Column('publication', sa.String(length=255), nullable=True),
     sa.Column('published_date', sa.Date(), nullable=True),
-    sa.Column('fetched_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('fetched_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('url')
     )
     op.create_table('people',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('type', sa.Enum('elected', 'staff', name='persontype'), nullable=False),
+    sa.Column('type', sa.Enum('elected', 'staff', 'think_tank', 'gov_inst', name='speakertype'), nullable=False),
     sa.Column('party', sa.Enum('democrat', 'republican', 'independent', 'other', name='party'), nullable=True),
     sa.Column('role', sa.String(length=255), nullable=True),
     sa.Column('chamber', sa.Enum('senate', 'house', 'executive', 'other', name='chamber'), nullable=True),
     sa.Column('state', sa.String(length=2), nullable=True),
     sa.Column('employer', sa.String(length=255), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('quotes',
@@ -52,8 +52,12 @@ def upgrade() -> None:
     sa.Column('quote_text', sa.Text(), nullable=False),
     sa.Column('context', sa.Text(), nullable=True),
     sa.Column('date_said', sa.Date(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('date_recorded', sa.Date(), nullable=True),
+    sa.Column('is_duplicate', sa.Boolean(), server_default='0', nullable=False),
+    sa.Column('duplicate_of_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['article_id'], ['articles.id'], ),
+    sa.ForeignKeyConstraint(['duplicate_of_id'], ['quotes.id'], ),
     sa.ForeignKeyConstraint(['person_id'], ['people.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

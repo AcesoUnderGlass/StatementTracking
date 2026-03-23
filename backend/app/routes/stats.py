@@ -31,7 +31,7 @@ def get_stats(db: Session = Depends(get_db)):
 
     time_rows = (
         db.query(
-            func.strftime("%Y-%m", Quote.date_said).label("month"),
+            func.to_char(Quote.date_said, 'YYYY-MM').label("month"),
             func.count(Quote.id),
         )
         .filter(Quote.date_said.isnot(None))
