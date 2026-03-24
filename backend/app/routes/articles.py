@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction
+from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction, Topic
 from ..schemas import (
     ExtractRequest,
     ExtractResponse,
@@ -17,6 +17,7 @@ from ..services.fetcher import fetch_article, FetchError
 from ..services.extractor import extract_quotes, ExtractionError
 from ..services.dedup import find_duplicate, check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
+from ..services.topic_quote import set_quote_topics
 
 
 def _jurisdiction_prompt_block(db: Session) -> str:
@@ -30,6 +31,13 @@ def _jurisdiction_prompt_block(db: Session) -> str:
         else:
             lines.append(f"- {r.name}")
     return "\n".join(lines)
+
+
+def _topic_prompt_block(db: Session) -> str:
+    rows = db.query(Topic).order_by(Topic.name).all()
+    if not rows:
+        return "(No topics seeded — run migrations.)"
+    return "\n".join(f"- {r.name}" for r in rows)
 
 
 def _as_jurisdiction_list(val) -> list:
@@ -50,8 +58,9 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail=str(e))
 
     block = _jurisdiction_prompt_block(db)
+    topic_block = _topic_prompt_block(db)
     try:
-        raw_quotes = extract_quotes(article_data["text"], block)
+        raw_quotes = extract_quotes(article_data["text"], block, topic_block)
     except ExtractionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -63,6 +72,7 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
             quote_text=q.get("quote_text", ""),
             context=q.get("context"),
             jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
+            topics=_as_jurisdiction_list(q.get("topics")),
         )
         for q in raw_quotes
     ]
@@ -147,6 +157,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
         db.add(quote)
         db.flush()
         set_quote_jurisdictions(db, quote, q.jurisdiction_names)
+        set_quote_topics(db, quote, q.topic_names)
         saved_count += 1
         if q.mark_as_duplicate:
             duplicate_count += 1

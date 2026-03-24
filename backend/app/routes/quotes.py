@@ -6,10 +6,11 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
-from ..models import Quote, Person, Article, quote_jurisdictions
+from ..models import Quote, Person, Article, quote_jurisdictions, quote_topics
 from ..schemas import QuoteUpdate, DuplicateCheckRequest
 from ..services.dedup import check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
+from ..services.topic_quote import set_quote_topics
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 
@@ -46,6 +47,7 @@ def _quote_to_dict(q: Quote) -> dict:
             ),
         } if q.article else None,
         "jurisdictions": sorted({j.name for j in (q.jurisdictions or [])}),
+        "topics": sorted({t.name for t in (q.topics or [])}),
     }
 
 
@@ -69,6 +71,7 @@ def list_quotes(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     jurisdiction_ids: Optional[list[int]] = Query(None),
+    topic_ids: Optional[list[int]] = Query(None),
     include_duplicates: bool = Query(False),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
@@ -80,6 +83,7 @@ def list_quotes(
             joinedload(Quote.person),
             joinedload(Quote.article),
             joinedload(Quote.jurisdictions),
+            joinedload(Quote.topics),
         )
     )
 
@@ -105,6 +109,14 @@ def list_quotes(
         subq = (
             db.query(qj.c.quote_id)
             .filter(qj.c.jurisdiction_id.in_(jurisdiction_ids))
+            .distinct()
+        )
+        query = query.filter(Quote.id.in_(subq))
+    if topic_ids:
+        qt = quote_topics
+        subq = (
+            db.query(qt.c.quote_id)
+            .filter(qt.c.topic_id.in_(topic_ids))
             .distinct()
         )
         query = query.filter(Quote.id.in_(subq))
@@ -134,6 +146,7 @@ def get_quote(quote_id: int, db: Session = Depends(get_db)):
             joinedload(Quote.person),
             joinedload(Quote.article),
             joinedload(Quote.jurisdictions),
+            joinedload(Quote.topics),
         )
         .filter(Quote.id == quote_id)
         .first()
@@ -153,14 +166,19 @@ def update_quote(
 
     update_data = updates.model_dump(exclude_unset=True)
     jurisdictions = update_data.pop("jurisdiction_names", None)
+    topic_names = update_data.pop("topic_names", None)
     for field, value in update_data.items():
         setattr(quote, field, value)
 
     db.commit()
     db.refresh(quote)
 
-    if "jurisdiction_names" in updates.model_dump(exclude_unset=True):
+    unset_fields = updates.model_dump(exclude_unset=True)
+    if "jurisdiction_names" in unset_fields:
         set_quote_jurisdictions(db, quote, jurisdictions)
+        db.commit()
+    if "topic_names" in unset_fields:
+        set_quote_topics(db, quote, topic_names)
         db.commit()
 
     loaded = (
@@ -169,6 +187,7 @@ def update_quote(
             joinedload(Quote.person),
             joinedload(Quote.article),
             joinedload(Quote.jurisdictions),
+            joinedload(Quote.topics),
         )
         .filter(Quote.id == quote_id)
         .first()

@@ -5,11 +5,12 @@ import {
   fetchQuotes,
   fetchQuote,
   fetchJurisdictions,
+  fetchTopics,
   updateQuote,
   deleteQuote,
   type QuoteFilters,
 } from '../api/client';
-import type { JurisdictionRow, QuoteWithDetails, QuoteListResponse } from '../types';
+import type { JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../types';
 import FilterBar from '../components/FilterBar';
 
 type VariantKey = '0' | '1' | '3';
@@ -19,6 +20,7 @@ interface EditFormState {
   date_said: string;
   date_recorded: string;
   jurisdiction_names: string[];
+  topic_names: string[];
 }
 
 interface ViewProps {
@@ -28,6 +30,7 @@ interface ViewProps {
   isLoading: boolean;
   error: Error | null;
   jurisdictionOptions: JurisdictionRow[];
+  topicOptions: TopicRow[];
   expanded: number | null;
   setExpanded: (id: number | null) => void;
   editing: number | null;
@@ -48,6 +51,7 @@ interface QuoteItemProps {
   editForm: EditFormState;
   setEditForm: (f: EditFormState) => void;
   jurisdictionOptions: JurisdictionRow[];
+  topicOptions: TopicRow[];
   onToggle: () => void;
   onStartEdit: () => void;
   onCancelEdit: () => void;
@@ -73,6 +77,7 @@ export default function QuotesBrowser() {
     date_said: '',
     date_recorded: '',
     jurisdiction_names: [],
+    topic_names: [],
   });
 
   useEffect(() => {
@@ -98,6 +103,11 @@ export default function QuotesBrowser() {
     queryFn: fetchJurisdictions,
   });
 
+  const { data: topicOptions = [] } = useQuery({
+    queryKey: ['topics'],
+    queryFn: fetchTopics,
+  });
+
   const updateMut = useMutation({
     mutationFn: ({
       id,
@@ -108,6 +118,7 @@ export default function QuotesBrowser() {
       date_said: string | null;
       date_recorded: string | null;
       jurisdiction_names: string[];
+      topic_names: string[];
     }) => updateQuote(id, rest),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -127,6 +138,7 @@ export default function QuotesBrowser() {
       date_said: q.date_said || '',
       date_recorded: q.date_recorded || '',
       jurisdiction_names: [...(q.jurisdictions ?? [])],
+      topic_names: [...(q.topics ?? [])],
     });
   }
 
@@ -137,6 +149,7 @@ export default function QuotesBrowser() {
       date_said: editForm.date_said || null,
       date_recorded: editForm.date_recorded || null,
       jurisdiction_names: editForm.jurisdiction_names,
+      topic_names: editForm.topic_names,
     });
   }
 
@@ -149,6 +162,7 @@ export default function QuotesBrowser() {
     isLoading,
     error: error as Error | null,
     jurisdictionOptions,
+    topicOptions,
     expanded,
     setExpanded,
     editing,
@@ -227,6 +241,7 @@ function ExpandedContent({
   editForm,
   setEditForm,
   jurisdictionOptions,
+  topicOptions,
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
@@ -238,6 +253,7 @@ function ExpandedContent({
   editForm: EditFormState;
   setEditForm: (f: EditFormState) => void;
   jurisdictionOptions: JurisdictionRow[];
+  topicOptions: TopicRow[];
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onSaveEdit: () => void;
@@ -256,6 +272,7 @@ function ExpandedContent({
         editForm={editForm}
         setEditForm={setEditForm}
         jurisdictionOptions={jurisdictionOptions}
+        topicOptions={topicOptions}
         onSave={onSaveEdit}
         onCancel={onCancelEdit}
       />
@@ -396,12 +413,14 @@ function SharedEditForm({
   editForm,
   setEditForm,
   jurisdictionOptions,
+  topicOptions,
   onSave,
   onCancel,
 }: {
   editForm: EditFormState;
   setEditForm: (f: EditFormState) => void;
   jurisdictionOptions: JurisdictionRow[];
+  topicOptions: TopicRow[];
   onSave: () => void;
   onCancel: () => void;
 }) {
@@ -409,11 +428,22 @@ function SharedEditForm({
   const selectedNames = new Set(editForm.jurisdiction_names);
   const extraNames = editForm.jurisdiction_names.filter((n) => !knownNames.has(n));
 
+  const knownTopicNames = new Set(topicOptions.map((t) => t.name));
+  const selectedTopicNames = new Set(editForm.topic_names);
+  const extraTopicNames = editForm.topic_names.filter((n) => !knownTopicNames.has(n));
+
   function toggleName(name: string) {
     const next = selectedNames.has(name)
       ? editForm.jurisdiction_names.filter((n) => n !== name)
       : [...editForm.jurisdiction_names, name];
     setEditForm({ ...editForm, jurisdiction_names: next });
+  }
+
+  function toggleTopicName(name: string) {
+    const next = selectedTopicNames.has(name)
+      ? editForm.topic_names.filter((n) => n !== name)
+      : [...editForm.topic_names, name];
+    setEditForm({ ...editForm, topic_names: next });
   }
 
   return (
@@ -508,6 +538,61 @@ function SharedEditForm({
           </div>
         )}
       </div>
+      <div>
+        <label className="block text-xs font-medium mb-1.5 text-slate-500">
+          Topics
+        </label>
+        {topicOptions.length === 0 ? (
+          <p className="text-xs text-slate-500">No topic list loaded.</p>
+        ) : (
+          <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white px-2 py-2">
+            <ul className="space-y-0.5">
+              {topicOptions.map((t) => (
+                <li key={t.id}>
+                  <label className="flex cursor-pointer items-center gap-2.5 px-2 py-1 text-sm rounded text-slate-700 hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      checked={selectedTopicNames.has(t.name)}
+                      onChange={() => toggleTopicName(t.name)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="min-w-0 flex-1">{t.name}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {extraTopicNames.length > 0 && (
+          <div className="mt-2">
+            <p className="text-[10px] font-medium uppercase tracking-wide mb-1 text-slate-500">
+              Other topics
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {extraTopicNames.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() =>
+                    setEditForm({
+                      ...editForm,
+                      topic_names: editForm.topic_names.filter(
+                        (x) => x !== n,
+                      ),
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-800 hover:bg-violet-100"
+                >
+                  {n}{' '}
+                  <span className="text-violet-600" aria-hidden>
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       <div className="flex gap-2">
         <button
           onClick={onSave}
@@ -541,6 +626,7 @@ function EditorialView({
   isLoading,
   error,
   jurisdictionOptions,
+  topicOptions,
   expanded,
   setExpanded,
   editing,
@@ -580,6 +666,7 @@ function EditorialView({
         filters={filters}
         onChange={setFilters}
         jurisdictions={jurisdictionOptions}
+        topics={topicOptions}
       />
 
       <div
@@ -628,6 +715,7 @@ function EditorialView({
                 editForm={editForm}
                 setEditForm={setEditForm}
                 jurisdictionOptions={jurisdictionOptions}
+                topicOptions={topicOptions}
                 onToggle={() => setExpanded(expanded === q.id ? null : q.id)}
                 onStartEdit={() => startEdit(q)}
                 onCancelEdit={cancelEdit}
@@ -693,6 +781,7 @@ function EditorialCard({
   editForm,
   setEditForm,
   jurisdictionOptions,
+  topicOptions,
   onToggle,
   onStartEdit,
   onCancelEdit,
@@ -779,16 +868,29 @@ function EditorialCard({
           )}
         </div>
 
-        {(quote.jurisdictions ?? []).length > 0 && (
+        {((quote.jurisdictions ?? []).length > 0 || (quote.topics ?? []).length > 0) && (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {(quote.jurisdictions ?? []).map((tag) => (
               <span
-                key={tag}
+                key={`j-${tag}`}
                 className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                 style={{
                   background: '#f5f0e5',
                   color: '#8b6914',
                   border: '1px solid #e5dcc8',
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+            {(quote.topics ?? []).map((tag) => (
+              <span
+                key={`t-${tag}`}
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                style={{
+                  background: '#efe5f5',
+                  color: '#6b2fa0',
+                  border: '1px solid #d8c8e5',
                 }}
               >
                 {tag}
@@ -809,6 +911,7 @@ function EditorialCard({
             editForm={editForm}
             setEditForm={setEditForm}
             jurisdictionOptions={jurisdictionOptions}
+            topicOptions={topicOptions}
             onStartEdit={onStartEdit}
             onCancelEdit={onCancelEdit}
             onSaveEdit={onSaveEdit}
@@ -836,6 +939,7 @@ function OrganicView({
   isLoading,
   error,
   jurisdictionOptions,
+  topicOptions,
   expanded,
   setExpanded,
   editing,
@@ -881,6 +985,7 @@ function OrganicView({
         filters={filters}
         onChange={setFilters}
         jurisdictions={jurisdictionOptions}
+        topics={topicOptions}
       />
 
       <div
@@ -925,6 +1030,7 @@ function OrganicView({
                 editForm={editForm}
                 setEditForm={setEditForm}
                 jurisdictionOptions={jurisdictionOptions}
+                topicOptions={topicOptions}
                 onToggle={() => setExpanded(expanded === q.id ? null : q.id)}
                 onStartEdit={() => startEdit(q)}
                 onCancelEdit={cancelEdit}
@@ -996,6 +1102,7 @@ function ClassicView({
   isLoading,
   error,
   jurisdictionOptions,
+  topicOptions,
   expanded,
   setExpanded,
   editing,
@@ -1018,6 +1125,7 @@ function ClassicView({
         filters={filters}
         onChange={setFilters}
         jurisdictions={jurisdictionOptions}
+        topics={topicOptions}
       />
 
       <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-start gap-2">
@@ -1069,8 +1177,8 @@ function ClassicView({
                   <th className="text-left px-4 py-3 font-medium text-slate-500 w-[80px]">
                     Party
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[160px]">
-                    Jurisdiction
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[180px]">
+                    Tags
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500">
                     Quote
@@ -1084,6 +1192,7 @@ function ClassicView({
                     key={q.id}
                     quote={q}
                     jurisdictionOptions={jurisdictionOptions}
+                    topicOptions={topicOptions}
                     isExpanded={expanded === q.id}
                     isEditing={editing === q.id}
                     editForm={editForm}
@@ -1151,6 +1260,7 @@ function ClassicView({
 function ClassicQuoteRow({
   quote,
   jurisdictionOptions,
+  topicOptions,
   isExpanded,
   isEditing,
   editForm,
@@ -1164,6 +1274,7 @@ function ClassicQuoteRow({
 }: {
   quote: QuoteWithDetails;
   jurisdictionOptions: JurisdictionRow[];
+  topicOptions: TopicRow[];
   isExpanded: boolean;
   isEditing: boolean;
   editForm: EditFormState;
@@ -1221,15 +1332,25 @@ function ClassicQuoteRow({
         </td>
         <td className="px-4 py-3 text-slate-600 align-top">
           <div className="flex flex-wrap gap-1">
-            {(quote.jurisdictions ?? []).length ? (
-              (quote.jurisdictions ?? []).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200"
-                >
-                  {tag}
-                </span>
-              ))
+            {(quote.jurisdictions ?? []).length || (quote.topics ?? []).length ? (
+              <>
+                {(quote.jurisdictions ?? []).map((tag) => (
+                  <span
+                    key={`j-${tag}`}
+                    className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {(quote.topics ?? []).map((tag) => (
+                  <span
+                    key={`t-${tag}`}
+                    className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-50 text-violet-800 border border-violet-200"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </>
             ) : (
               <span className="text-slate-400">—</span>
             )}
@@ -1263,6 +1384,7 @@ function ClassicQuoteRow({
               editForm={editForm}
               setEditForm={setEditForm}
               jurisdictionOptions={jurisdictionOptions}
+              topicOptions={topicOptions}
               onStartEdit={onStartEdit}
               onCancelEdit={onCancelEdit}
               onSaveEdit={onSaveEdit}
@@ -1288,6 +1410,7 @@ function OrganicCard({
   editForm,
   setEditForm,
   jurisdictionOptions,
+  topicOptions,
   onToggle,
   onStartEdit,
   onCancelEdit,
@@ -1400,12 +1523,25 @@ function OrganicCard({
           <div className="flex flex-wrap gap-1.5">
             {(quote.jurisdictions ?? []).map((tag) => (
               <span
-                key={tag}
+                key={`j-${tag}`}
                 className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                 style={{
                   background: '#e8f0ea',
                   color: '#3d7a54',
                   border: '1px solid #c8dcc8',
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+            {(quote.topics ?? []).map((tag) => (
+              <span
+                key={`t-${tag}`}
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                style={{
+                  background: '#ede5f0',
+                  color: '#6b4080',
+                  border: '1px solid #d0c0dc',
                 }}
               >
                 {tag}
@@ -1438,6 +1574,7 @@ function OrganicCard({
             editForm={editForm}
             setEditForm={setEditForm}
             jurisdictionOptions={jurisdictionOptions}
+            topicOptions={topicOptions}
             onStartEdit={onStartEdit}
             onCancelEdit={onCancelEdit}
             onSaveEdit={onSaveEdit}

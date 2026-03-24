@@ -35,10 +35,15 @@ SYSTEM_PROMPT = (
     "county is relevant, tag both the locality name and 'US-local'. Only create a new "
     "tag if absolutely nothing in the canonical list fits; never create synonyms of "
     "existing tags. Return jurisdictions as an array of tag name strings. "
+    "For each quote, also assign topic tags describing what the quote is about. "
+    "Strongly prefer tags from the canonical topic list provided in the user message. "
+    "A quote may have more than one topic. Only create a new topic tag if absolutely "
+    "nothing in the canonical list fits; never create synonyms of existing tags. "
+    "Return topics as an array of tag name strings. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
     '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[] }] }'
+    '"jurisdictions": string[], "topics": string[] }] }'
 )
 
 
@@ -46,7 +51,11 @@ class ExtractionError(Exception):
     pass
 
 
-def extract_quotes(article_text: str, canonical_jurisdiction_list: str) -> List[dict]:
+def extract_quotes(
+    article_text: str,
+    canonical_jurisdiction_list: str,
+    canonical_topic_list: str = "",
+) -> List[dict]:
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise ExtractionError("ANTHROPIC_API_KEY is not set in environment.")
@@ -66,6 +75,9 @@ def extract_quotes(article_text: str, canonical_jurisdiction_list: str) -> List[
                         "Canonical jurisdiction tag names (choose only from this list "
                         "unless no entry fits; use the exact name string, not synonyms):\n\n"
                         f"{canonical_jurisdiction_list}\n\n"
+                        "Canonical topic tag names (strongly prefer tags from this list; "
+                        "only create a new tag if nothing fits):\n\n"
+                        f"{canonical_topic_list}\n\n"
                         "Extract all direct AI-related quotes from the following article:\n\n"
                         f"{article_text}"
                     ),

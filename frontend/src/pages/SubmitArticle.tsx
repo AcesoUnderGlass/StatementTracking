@@ -25,6 +25,7 @@ function blankQuoteCard(): QuoteCardData {
     quote_text: '',
     context: null,
     jurisdiction_names: [],
+    topic_names: [],
     approved: true,
     person_id: null,
     new_person: null,
@@ -81,6 +82,7 @@ export default function SubmitArticle() {
         quote_text: q.quote_text,
         context: q.context,
         jurisdiction_names: q.jurisdictions ?? [],
+        topic_names: q.topics ?? [],
         approved: true,
         person_id: null,
         new_person: q.speaker_name
@@ -170,6 +172,7 @@ export default function SubmitArticle() {
         new_person: q.new_person,
         mark_as_duplicate: q.mark_as_duplicate,
         jurisdiction_names: q.jurisdiction_names.length ? q.jurisdiction_names : null,
+        topic_names: q.topic_names.length ? q.topic_names : null,
       })),
     };
 

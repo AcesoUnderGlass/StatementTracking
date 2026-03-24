@@ -40,6 +40,13 @@ quote_jurisdictions = Table(
     Column("jurisdiction_id", Integer, ForeignKey("jurisdictions.id", ondelete="CASCADE"), primary_key=True),
 )
 
+quote_topics = Table(
+    "quote_topics",
+    Base.metadata,
+    Column("quote_id", Integer, ForeignKey("quotes.id", ondelete="CASCADE"), primary_key=True),
+    Column("topic_id", Integer, ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True),
+)
+
 
 class Jurisdiction(Base):
     __tablename__ = "jurisdictions"
@@ -48,6 +55,13 @@ class Jurisdiction(Base):
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     abbreviation: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
+
+
+class Topic(Base):
+    __tablename__ = "topics"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
 
 class Person(Base):
@@ -116,4 +130,7 @@ class Quote(Base):
     )
     jurisdictions: Mapped[List["Jurisdiction"]] = relationship(
         secondary=quote_jurisdictions, lazy="selectin",
+    )
+    topics: Mapped[List["Topic"]] = relationship(
+        secondary=quote_topics, lazy="selectin",
     )

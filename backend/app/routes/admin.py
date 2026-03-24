@@ -8,7 +8,7 @@ from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Article, Person, Quote, Jurisdiction, quote_jurisdictions
+from ..models import Article, Person, Quote, Jurisdiction, quote_jurisdictions, Topic, quote_topics
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -33,6 +33,12 @@ def export_db(db: Session = Depends(get_db)):
             quote_jurisdictions.c.jurisdiction_id,
         )
     ).all()
+    qt_rows = db.execute(
+        select(quote_topics).order_by(
+            quote_topics.c.quote_id,
+            quote_topics.c.topic_id,
+        )
+    ).all()
     payload = {
         "people": [_serialize_row(p) for p in db.query(Person).all()],
         "articles": [_serialize_row(a) for a in db.query(Article).all()],
@@ -41,6 +47,11 @@ def export_db(db: Session = Depends(get_db)):
         "quote_jurisdictions": [
             {"quote_id": r[0], "jurisdiction_id": r[1]}
             for r in qj_rows
+        ],
+        "topics": [_serialize_row(t) for t in db.query(Topic).all()],
+        "quote_topics": [
+            {"quote_id": r[0], "topic_id": r[1]}
+            for r in qt_rows
         ],
     }
     content = json.dumps(payload, indent=2)
@@ -73,12 +84,15 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
     raw = await file.read()
     data = json.loads(raw)
 
+    db.execute(delete(quote_topics))
     db.execute(delete(quote_jurisdictions))
     db.query(Quote).delete()
     db.query(Article).delete()
     db.query(Person).delete()
     if data.get("jurisdictions"):
         db.query(Jurisdiction).delete()
+    if data.get("topics"):
+        db.query(Topic).delete()
     db.flush()
 
     jurisdictions_count = 0
@@ -147,6 +161,15 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
 
     db.flush()
 
+    topics_count = 0
+    for row in data.get("topics", []):
+        t = Topic(id=row["id"], name=row["name"])
+        db.add(t)
+        topics_count += 1
+
+    if topics_count:
+        db.flush()
+
     qj_count = 0
     for row in data.get("quote_jurisdictions", []):
         db.execute(
@@ -156,6 +179,16 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
             )
         )
         qj_count += 1
+
+    qt_count = 0
+    for row in data.get("quote_topics", []):
+        db.execute(
+            insert(quote_topics).values(
+                quote_id=row["quote_id"],
+                topic_id=row["topic_id"],
+            )
+        )
+        qt_count += 1
 
     db.commit()
 
@@ -167,6 +200,8 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
             "quotes": quotes_count,
             "jurisdictions": jurisdictions_count,
             "quote_jurisdictions": qj_count,
+            "topics": topics_count,
+            "quote_topics": qt_count,
         },
     }
 

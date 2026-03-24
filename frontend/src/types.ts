@@ -40,6 +40,7 @@ export interface ExtractedQuote {
   quote_text: string;
   context: string | null;
   jurisdictions: string[];
+  topics: string[];
 }
 
 export interface ExtractResponse {
@@ -55,6 +56,7 @@ export interface QuoteSaveItem {
   new_person?: PersonCreate | null;
   mark_as_duplicate?: boolean;
   jurisdiction_names?: string[] | null;
+  topic_names?: string[] | null;
 }
 
 export interface SaveRequest {
@@ -92,6 +94,11 @@ export interface JurisdictionRow {
   category: string;
 }
 
+export interface TopicRow {
+  id: number;
+  name: string;
+}
+
 export interface QuoteWithDetails {
   id: number;
   quote_text: string;
@@ -102,6 +109,7 @@ export interface QuoteWithDetails {
   duplicate_of_id: number | null;
   created_at: string;
   jurisdictions: string[];
+  topics: string[];
   person: {
     id: number;
     name: string;

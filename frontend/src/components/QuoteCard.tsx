@@ -8,6 +8,7 @@ export interface QuoteCardData {
   quote_text: string;
   context: string | null;
   jurisdiction_names: string[];
+  topic_names: string[];
   approved: boolean;
   person_id: number | null;
   new_person: PersonCreate | null;
@@ -227,6 +228,26 @@ export default function QuoteCard({
               })
             }
             placeholder="e.g. Colorado, US-state, USA-federal, World"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">
+            Topic tags (comma-separated)
+          </label>
+          <input
+            type="text"
+            value={data.topic_names.join(', ')}
+            onChange={(e) =>
+              onChange(index, {
+                topic_names: e.target.value
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
+            placeholder="e.g. regulation, AGI, jobs"
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>

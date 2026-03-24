@@ -68,6 +68,7 @@ class ExtractedQuote(BaseModel):
     quote_text: str
     context: Optional[str] = None
     jurisdictions: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
 
 
 class ExtractRequest(BaseModel):
@@ -88,6 +89,7 @@ class QuoteSaveItem(BaseModel):
     new_person: Optional[PersonCreate] = None
     mark_as_duplicate: bool = False
     jurisdiction_names: Optional[List[str]] = None
+    topic_names: Optional[List[str]] = None
 
 
 class SaveRequest(BaseModel):
@@ -108,6 +110,7 @@ class QuoteUpdate(BaseModel):
     date_recorded: Optional[date] = None
     person_id: Optional[int] = None
     jurisdiction_names: Optional[List[str]] = None
+    topic_names: Optional[List[str]] = None
 
 
 class DuplicateCheckItem(BaseModel):
@@ -146,6 +149,7 @@ class QuoteOut(BaseModel):
     duplicate_of_id: Optional[int] = None
     created_at: datetime
     jurisdictions: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
     person: Optional[PersonBase] = None
     article: Optional[ArticleMetadata] = None
 
