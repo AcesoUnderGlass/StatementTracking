@@ -20,7 +20,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/quotes" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/submit" element={<SubmitArticle />} />
             <Route path="/quotes" element={<QuotesBrowser />} />
