@@ -87,17 +87,17 @@ export default function QuotesBrowser() {
         </div>
       ) : (
         <>
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+            <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">Speaker</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">Role</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">Party</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[100px]">Date</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[120px]">Speaker</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[150px]">Role</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[80px]">Party</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500">Quote</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">Publication</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[100px]">Publication</th>
+                  <th className="px-4 py-3 w-[40px]"></th>
                 </tr>
               </thead>
               <tbody>
@@ -237,11 +237,11 @@ function QuoteRow({
             '—'
           )}
         </td>
-        <td className="px-4 py-3 text-slate-700 max-w-xs">
-          <div className="flex items-center gap-2">
-            <span className="truncate">
-              {quote.quote_text.substring(0, 100)}
-              {quote.quote_text.length > 100 ? '...' : ''}
+        <td className="px-4 py-3 text-slate-700">
+          <div className="flex items-start gap-2">
+            <span>
+              {quote.quote_text.substring(0, 1000)}
+              {quote.quote_text.length > 1000 ? '...' : ''}
             </span>
             {quote.is_duplicate && (
               <span className="shrink-0 inline-block px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
