@@ -39,6 +39,7 @@ export interface ExtractedQuote {
   speaker_type: SpeakerType | null;
   quote_text: string;
   context: string | null;
+  jurisdictions: string[];
 }
 
 export interface ExtractResponse {
@@ -53,6 +54,7 @@ export interface QuoteSaveItem {
   person_id?: number | null;
   new_person?: PersonCreate | null;
   mark_as_duplicate?: boolean;
+  jurisdiction_names?: string[] | null;
 }
 
 export interface SaveRequest {
@@ -83,6 +85,13 @@ export interface DuplicateCheckResult {
   existing_quote: ExistingQuoteMatch | null;
 }
 
+export interface JurisdictionRow {
+  id: number;
+  name: string;
+  abbreviation: string | null;
+  category: string;
+}
+
 export interface QuoteWithDetails {
   id: number;
   quote_text: string;
@@ -92,6 +101,7 @@ export interface QuoteWithDetails {
   is_duplicate: boolean;
   duplicate_of_id: number | null;
   created_at: string;
+  jurisdictions: string[];
   person: {
     id: number;
     name: string;

@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 
-from .routes import admin, articles, people, quotes, stats
+from .routes import admin, articles, jurisdictions, people, quotes, stats
 
 app = FastAPI(title="AI Quote Tracker", version="1.0.0")
 
 app.include_router(admin.router)
 app.include_router(articles.router)
+app.include_router(jurisdictions.router)
 app.include_router(people.router)
 app.include_router(quotes.router)
 app.include_router(stats.router)

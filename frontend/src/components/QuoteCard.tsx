@@ -7,6 +7,7 @@ export interface QuoteCardData {
   speaker_type: SpeakerType | null;
   quote_text: string;
   context: string | null;
+  jurisdiction_names: string[];
   approved: boolean;
   person_id: number | null;
   new_person: PersonCreate | null;
@@ -207,6 +208,26 @@ export default function QuoteCard({
             onChange={(e) => onChange(index, { context: e.target.value })}
             rows={2}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">
+            Jurisdiction tags (subject matter; comma-separated)
+          </label>
+          <input
+            type="text"
+            value={data.jurisdiction_names.join(', ')}
+            onChange={(e) =>
+              onChange(index, {
+                jurisdiction_names: e.target.value
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
+            placeholder="e.g. Colorado, US-state, USA-federal"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>

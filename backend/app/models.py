@@ -2,7 +2,10 @@ import enum
 from datetime import date, datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, String,
+    Table, Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -28,6 +31,23 @@ class Chamber(str, enum.Enum):
     house = "House"
     executive = "Executive"
     other = "Other"
+
+
+quote_jurisdictions = Table(
+    "quote_jurisdictions",
+    Base.metadata,
+    Column("quote_id", Integer, ForeignKey("quotes.id", ondelete="CASCADE"), primary_key=True),
+    Column("jurisdiction_id", Integer, ForeignKey("jurisdictions.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class Jurisdiction(Base):
+    __tablename__ = "jurisdictions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    abbreviation: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)
 
 
 class Person(Base):
@@ -93,4 +113,7 @@ class Quote(Base):
     article: Mapped["Article"] = relationship(back_populates="quotes")
     duplicate_of: Mapped[Optional["Quote"]] = relationship(
         remote_side=[id], foreign_keys=[duplicate_of_id]
+    )
+    jurisdictions: Mapped[List["Jurisdiction"]] = relationship(
+        secondary=quote_jurisdictions, lazy="selectin",
     )

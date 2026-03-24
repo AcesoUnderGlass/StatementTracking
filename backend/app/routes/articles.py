@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Article, Person, SpeakerType, Party, Chamber, Quote
+from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction
 from ..schemas import (
     ExtractRequest,
     ExtractResponse,
@@ -16,19 +16,42 @@ from ..schemas import (
 from ..services.fetcher import fetch_article, FetchError
 from ..services.extractor import extract_quotes, ExtractionError
 from ..services.dedup import find_duplicate, check_duplicates_batch
+from ..services.jurisdiction_quote import set_quote_jurisdictions
+
+
+def _jurisdiction_prompt_block(db: Session) -> str:
+    rows = db.query(Jurisdiction).order_by(Jurisdiction.name).all()
+    if not rows:
+        return "(No jurisdictions seeded — run migrations.)"
+    lines = []
+    for r in rows:
+        if r.abbreviation:
+            lines.append(f"- {r.name} (abbreviation: {r.abbreviation})")
+        else:
+            lines.append(f"- {r.name}")
+    return "\n".join(lines)
+
+
+def _as_jurisdiction_list(val) -> list:
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return [str(x).strip() for x in val if x is not None and str(x).strip()]
+    return []
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
 
 @router.post("/extract", response_model=ExtractResponse)
-def extract_from_url(req: ExtractRequest):
+def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
     try:
         article_data = fetch_article(req.url)
     except FetchError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    block = _jurisdiction_prompt_block(db)
     try:
-        raw_quotes = extract_quotes(article_data["text"])
+        raw_quotes = extract_quotes(article_data["text"], block)
     except ExtractionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -39,6 +62,7 @@ def extract_from_url(req: ExtractRequest):
             speaker_type=q.get("speaker_type"),
             quote_text=q.get("quote_text", ""),
             context=q.get("context"),
+            jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
         )
         for q in raw_quotes
     ]
@@ -121,6 +145,8 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
             duplicate_of_id=dup_of_id,
         )
         db.add(quote)
+        db.flush()
+        set_quote_jurisdictions(db, quote, q.jurisdiction_names)
         saved_count += 1
         if q.mark_as_duplicate:
             duplicate_count += 1

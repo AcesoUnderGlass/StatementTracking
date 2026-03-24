@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchQuotes, fetchQuote, updateQuote, deleteQuote, type QuoteFilters } from '../api/client';
+import { fetchQuotes, fetchQuote, fetchJurisdictions, updateQuote, deleteQuote, type QuoteFilters } from '../api/client';
 import type { QuoteWithDetails } from '../types';
 import FilterBar from '../components/FilterBar';
 
@@ -19,6 +19,11 @@ export default function QuotesBrowser() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['quotes', filters],
     queryFn: () => fetchQuotes(filters),
+  });
+
+  const { data: jurisdictionOptions = [] } = useQuery({
+    queryKey: ['jurisdictions'],
+    queryFn: fetchJurisdictions,
   });
 
   const updateMut = useMutation({
@@ -62,7 +67,7 @@ export default function QuotesBrowser() {
         Browse and filter AI-related quotes from all tracked speakers.
       </p>
 
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} jurisdictions={jurisdictionOptions} />
 
       <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-start gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
@@ -95,6 +100,7 @@ export default function QuotesBrowser() {
                   <th className="text-left px-4 py-3 font-medium text-slate-500 w-[120px]">Speaker</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500 w-[150px]">Role</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500 w-[80px]">Party</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[160px]">Jurisdiction</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500">Quote</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500 w-[100px]">Publication</th>
                   <th className="px-4 py-3 w-[40px]"></th>
@@ -121,7 +127,7 @@ export default function QuotesBrowser() {
                 ))}
                 {data?.quotes.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-slate-400">
+                    <td colSpan={8} className="text-center py-8 text-slate-400">
                       No quotes found.
                     </td>
                   </tr>
@@ -237,6 +243,22 @@ function QuoteRow({
             '—'
           )}
         </td>
+        <td className="px-4 py-3 text-slate-600 align-top">
+          <div className="flex flex-wrap gap-1">
+            {(quote.jurisdictions ?? []).length ? (
+              (quote.jurisdictions ?? []).map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200"
+                >
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-slate-400">—</span>
+            )}
+          </div>
+        </td>
         <td className="px-4 py-3 text-slate-700">
           <div className="flex items-start gap-2">
             <span>
@@ -259,7 +281,7 @@ function QuoteRow({
       </tr>
       {isExpanded && (
         <tr className="bg-slate-50">
-          <td colSpan={7} className="px-6 py-4">
+          <td colSpan={8} className="px-6 py-4">
             {isEditing ? (
               <div className="space-y-3">
                 <textarea

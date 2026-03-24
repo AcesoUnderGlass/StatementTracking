@@ -9,6 +9,7 @@ import type {
   Stats,
   DuplicateCheckItem,
   DuplicateCheckResult,
+  JurisdictionRow,
 } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
@@ -69,6 +70,7 @@ export interface QuoteFilters {
   search?: string;
   party?: string;
   type?: string;
+  jurisdiction_ids?: number[];
   from_date?: string;
   to_date?: string;
   include_duplicates?: boolean;
@@ -78,13 +80,23 @@ export interface QuoteFilters {
 
 export function fetchQuotes(filters: QuoteFilters = {}): Promise<QuoteListResponse> {
   const params = new URLSearchParams();
-  Object.entries(filters).forEach(([key, val]) => {
+  const { jurisdiction_ids, ...rest } = filters;
+  Object.entries(rest).forEach(([key, val]) => {
     if (val !== undefined && val !== null && val !== '') {
       params.set(key, String(val));
     }
   });
+  if (jurisdiction_ids?.length) {
+    for (const id of jurisdiction_ids) {
+      params.append('jurisdiction_ids', String(id));
+    }
+  }
   const qs = params.toString();
   return request(`/quotes${qs ? '?' + qs : ''}`);
+}
+
+export function fetchJurisdictions(): Promise<JurisdictionRow[]> {
+  return request('/jurisdictions');
 }
 
 export function fetchQuote(id: number): Promise<QuoteWithDetails> {
@@ -93,7 +105,14 @@ export function fetchQuote(id: number): Promise<QuoteWithDetails> {
 
 export function updateQuote(
   id: number,
-  data: { quote_text?: string; context?: string; date_said?: string | null; date_recorded?: string | null; person_id?: number },
+  data: {
+    quote_text?: string;
+    context?: string;
+    date_said?: string | null;
+    date_recorded?: string | null;
+    person_id?: number;
+    jurisdiction_names?: string[] | null;
+  },
 ): Promise<QuoteWithDetails> {
   return request(`/quotes/${id}`, {
     method: 'PUT',

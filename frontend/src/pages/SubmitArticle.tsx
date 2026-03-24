@@ -24,6 +24,7 @@ function blankQuoteCard(): QuoteCardData {
     speaker_type: 'elected',
     quote_text: '',
     context: null,
+    jurisdiction_names: [],
     approved: true,
     person_id: null,
     new_person: null,
@@ -79,6 +80,7 @@ export default function SubmitArticle() {
         speaker_type: q.speaker_type || 'elected',
         quote_text: q.quote_text,
         context: q.context,
+        jurisdiction_names: q.jurisdictions ?? [],
         approved: true,
         person_id: null,
         new_person: q.speaker_name
@@ -167,6 +169,7 @@ export default function SubmitArticle() {
         person_id: q.person_id,
         new_person: q.new_person,
         mark_as_duplicate: q.mark_as_duplicate,
+        jurisdiction_names: q.jurisdiction_names.length ? q.jurisdiction_names : null,
       })),
     };
 

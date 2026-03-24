@@ -6,9 +6,10 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
-from ..models import Quote, Person, Article
+from ..models import Quote, Person, Article, quote_jurisdictions
 from ..schemas import QuoteUpdate, DuplicateCheckRequest
 from ..services.dedup import check_duplicates_batch
+from ..services.jurisdiction_quote import set_quote_jurisdictions
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 
@@ -44,6 +45,7 @@ def _quote_to_dict(q: Quote) -> dict:
                 else None
             ),
         } if q.article else None,
+        "jurisdictions": sorted({j.name for j in (q.jurisdictions or [])}),
     }
 
 
@@ -66,6 +68,7 @@ def list_quotes(
     type: Optional[str] = None,
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
+    jurisdiction_ids: Optional[list[int]] = Query(None),
     include_duplicates: bool = Query(False),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
@@ -73,7 +76,11 @@ def list_quotes(
 ):
     query = (
         db.query(Quote)
-        .options(joinedload(Quote.person), joinedload(Quote.article))
+        .options(
+            joinedload(Quote.person),
+            joinedload(Quote.article),
+            joinedload(Quote.jurisdictions),
+        )
     )
 
     if not include_duplicates:
@@ -93,6 +100,14 @@ def list_quotes(
         query = query.filter(Quote.date_said >= from_date)
     if to_date:
         query = query.filter(Quote.date_said <= to_date)
+    if jurisdiction_ids:
+        qj = quote_jurisdictions
+        subq = (
+            db.query(qj.c.quote_id)
+            .filter(qj.c.jurisdiction_id.in_(jurisdiction_ids))
+            .distinct()
+        )
+        query = query.filter(Quote.id.in_(subq))
 
     total = query.count()
 
@@ -115,7 +130,11 @@ def list_quotes(
 def get_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = (
         db.query(Quote)
-        .options(joinedload(Quote.person), joinedload(Quote.article))
+        .options(
+            joinedload(Quote.person),
+            joinedload(Quote.article),
+            joinedload(Quote.jurisdictions),
+        )
         .filter(Quote.id == quote_id)
         .first()
     )
@@ -133,15 +152,24 @@ def update_quote(
         raise HTTPException(status_code=404, detail="Quote not found.")
 
     update_data = updates.model_dump(exclude_unset=True)
+    jurisdictions = update_data.pop("jurisdiction_names", None)
     for field, value in update_data.items():
         setattr(quote, field, value)
 
     db.commit()
     db.refresh(quote)
 
+    if "jurisdiction_names" in updates.model_dump(exclude_unset=True):
+        set_quote_jurisdictions(db, quote, jurisdictions)
+        db.commit()
+
     loaded = (
         db.query(Quote)
-        .options(joinedload(Quote.person), joinedload(Quote.article))
+        .options(
+            joinedload(Quote.person),
+            joinedload(Quote.article),
+            joinedload(Quote.jurisdictions),
+        )
         .filter(Quote.id == quote_id)
         .first()
     )

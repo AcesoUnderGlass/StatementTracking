@@ -28,9 +28,17 @@ SYSTEM_PROMPT = (
     "interruption occurred. Only treat two quotes from the same speaker as separate "
     "entries if they are clearly distinct statements made at different points in the "
     "article. "
+    "For each quote, also assign jurisdiction tags describing the subject matter of "
+    "the statement (NOT the speaker's location or identity). Choose exclusively from "
+    "the canonical list provided in the user message below. When a specific US state is "
+    "relevant, tag both the state name and 'US-state'. When a specific US city or "
+    "county is relevant, tag both the locality name and 'US-local'. Only create a new "
+    "tag if absolutely nothing in the canonical list fits; never create synonyms of "
+    "existing tags. Return jurisdictions as an array of tag name strings. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string }] }'
+    '"speaker_type": string, "quote_text": string, "context": string, '
+    '"jurisdictions": string[] }] }'
 )
 
 
@@ -38,7 +46,7 @@ class ExtractionError(Exception):
     pass
 
 
-def extract_quotes(article_text: str) -> List[dict]:
+def extract_quotes(article_text: str, canonical_jurisdiction_list: str) -> List[dict]:
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise ExtractionError("ANTHROPIC_API_KEY is not set in environment.")
@@ -48,15 +56,18 @@ def extract_quotes(article_text: str) -> List[dict]:
     try:
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=2000,
+            max_tokens=4096,
             temperature=0,
             system=SYSTEM_PROMPT,
             messages=[
                 {
                     "role": "user",
                     "content": (
-                        "Extract all direct AI-related quotes from the following "
-                        f"article:\n\n{article_text}"
+                        "Canonical jurisdiction tag names (choose only from this list "
+                        "unless no entry fits; use the exact name string, not synonyms):\n\n"
+                        f"{canonical_jurisdiction_list}\n\n"
+                        "Extract all direct AI-related quotes from the following article:\n\n"
+                        f"{article_text}"
                     ),
                 }
             ],

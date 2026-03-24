@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ── People ──────────────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ class ExtractedQuote(BaseModel):
     speaker_type: Optional[str] = None
     quote_text: str
     context: Optional[str] = None
+    jurisdictions: List[str] = Field(default_factory=list)
 
 
 class ExtractRequest(BaseModel):
@@ -86,6 +87,7 @@ class QuoteSaveItem(BaseModel):
     person_id: Optional[int] = None
     new_person: Optional[PersonCreate] = None
     mark_as_duplicate: bool = False
+    jurisdiction_names: Optional[List[str]] = None
 
 
 class SaveRequest(BaseModel):
@@ -105,6 +107,7 @@ class QuoteUpdate(BaseModel):
     date_said: Optional[date] = None
     date_recorded: Optional[date] = None
     person_id: Optional[int] = None
+    jurisdiction_names: Optional[List[str]] = None
 
 
 class DuplicateCheckItem(BaseModel):
@@ -142,6 +145,7 @@ class QuoteOut(BaseModel):
     is_duplicate: bool = False
     duplicate_of_id: Optional[int] = None
     created_at: datetime
+    jurisdictions: List[str] = Field(default_factory=list)
     person: Optional[PersonBase] = None
     article: Optional[ArticleMetadata] = None
 

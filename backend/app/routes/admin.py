@@ -4,10 +4,11 @@ import json
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
+from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Article, Person, Quote
+from ..models import Article, Person, Quote, Jurisdiction, quote_jurisdictions
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -26,10 +27,21 @@ def _serialize_row(obj) -> dict:
 
 @router.get("/export")
 def export_db(db: Session = Depends(get_db)):
+    qj_rows = db.execute(
+        select(quote_jurisdictions).order_by(
+            quote_jurisdictions.c.quote_id,
+            quote_jurisdictions.c.jurisdiction_id,
+        )
+    ).all()
     payload = {
         "people": [_serialize_row(p) for p in db.query(Person).all()],
         "articles": [_serialize_row(a) for a in db.query(Article).all()],
         "quotes": [_serialize_row(q) for q in db.query(Quote).all()],
+        "jurisdictions": [_serialize_row(j) for j in db.query(Jurisdiction).all()],
+        "quote_jurisdictions": [
+            {"quote_id": r[0], "jurisdiction_id": r[1]}
+            for r in qj_rows
+        ],
     }
     content = json.dumps(payload, indent=2)
     return StreamingResponse(
@@ -61,10 +73,27 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
     raw = await file.read()
     data = json.loads(raw)
 
+    db.execute(delete(quote_jurisdictions))
     db.query(Quote).delete()
     db.query(Article).delete()
     db.query(Person).delete()
+    if data.get("jurisdictions"):
+        db.query(Jurisdiction).delete()
     db.flush()
+
+    jurisdictions_count = 0
+    for row in data.get("jurisdictions", []):
+        j = Jurisdiction(
+            id=row["id"],
+            name=row["name"],
+            abbreviation=row.get("abbreviation"),
+            category=row["category"],
+        )
+        db.add(j)
+        jurisdictions_count += 1
+
+    if jurisdictions_count:
+        db.flush()
 
     people_count = 0
     for row in data.get("people", []):
@@ -116,6 +145,18 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
         db.add(q)
         quotes_count += 1
 
+    db.flush()
+
+    qj_count = 0
+    for row in data.get("quote_jurisdictions", []):
+        db.execute(
+            insert(quote_jurisdictions).values(
+                quote_id=row["quote_id"],
+                jurisdiction_id=row["jurisdiction_id"],
+            )
+        )
+        qj_count += 1
+
     db.commit()
 
     return {
@@ -124,6 +165,8 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
             "people": people_count,
             "articles": articles_count,
             "quotes": quotes_count,
+            "jurisdictions": jurisdictions_count,
+            "quote_jurisdictions": qj_count,
         },
     }
 
