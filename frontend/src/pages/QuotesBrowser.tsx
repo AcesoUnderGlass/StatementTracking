@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchQuotes, fetchQuote, fetchJurisdictions, updateQuote, deleteQuote, type QuoteFilters } from '../api/client';
-import type { QuoteWithDetails } from '../types';
+import type { JurisdictionRow, QuoteWithDetails } from '../types';
 import FilterBar from '../components/FilterBar';
 
 export default function QuotesBrowser() {
@@ -14,7 +14,8 @@ export default function QuotesBrowser() {
     quote_text: string;
     date_said: string;
     date_recorded: string;
-  }>({ quote_text: '', date_said: '', date_recorded: '' });
+    jurisdiction_names: string[];
+  }>({ quote_text: '', date_said: '', date_recorded: '', jurisdiction_names: [] });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['quotes', filters],
@@ -27,8 +28,16 @@ export default function QuotesBrowser() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, ...rest }: { id: number; quote_text: string; date_said: string | null; date_recorded: string | null }) =>
-      updateQuote(id, rest),
+    mutationFn: ({
+      id,
+      ...rest
+    }: {
+      id: number;
+      quote_text: string;
+      date_said: string | null;
+      date_recorded: string | null;
+      jurisdiction_names: string[];
+    }) => updateQuote(id, rest),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       setEditing(null);
@@ -46,6 +55,7 @@ export default function QuotesBrowser() {
       quote_text: q.quote_text,
       date_said: q.date_said || '',
       date_recorded: q.date_recorded || '',
+      jurisdiction_names: [...(q.jurisdictions ?? [])],
     });
   }
 
@@ -55,6 +65,7 @@ export default function QuotesBrowser() {
       quote_text: editForm.quote_text,
       date_said: editForm.date_said || null,
       date_recorded: editForm.date_recorded || null,
+      jurisdiction_names: editForm.jurisdiction_names,
     });
   }
 
@@ -111,6 +122,7 @@ export default function QuotesBrowser() {
                   <QuoteRow
                     key={q.id}
                     quote={q}
+                    jurisdictionOptions={jurisdictionOptions}
                     isExpanded={expanded === q.id}
                     isEditing={editing === q.id}
                     editForm={editForm}
@@ -170,6 +182,7 @@ export default function QuotesBrowser() {
 
 function QuoteRow({
   quote,
+  jurisdictionOptions,
   isExpanded,
   isEditing,
   editForm,
@@ -182,14 +195,25 @@ function QuoteRow({
   onViewOriginal,
 }: {
   quote: QuoteWithDetails;
+  jurisdictionOptions: JurisdictionRow[];
   isExpanded: boolean;
   isEditing: boolean;
-  editForm: { quote_text: string; date_said: string; date_recorded: string };
+  editForm: {
+    quote_text: string;
+    date_said: string;
+    date_recorded: string;
+    jurisdiction_names: string[];
+  };
   onToggle: () => void;
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onSaveEdit: () => void;
-  onEditChange: (f: { quote_text: string; date_said: string; date_recorded: string }) => void;
+  onEditChange: (f: {
+    quote_text: string;
+    date_said: string;
+    date_recorded: string;
+    jurisdiction_names: string[];
+  }) => void;
   onDelete: () => void;
   onViewOriginal: (id: number) => void;
 }) {
@@ -204,6 +228,25 @@ function QuoteRow({
     Republican: 'bg-red-100 text-red-700',
     Independent: 'bg-purple-100 text-purple-700',
   };
+
+  const knownNameSet = new Set(jurisdictionOptions.map((j) => j.name));
+  const selectedNameSet = new Set(editForm.jurisdiction_names);
+
+  function toggleJurisdictionName(name: string) {
+    const next = selectedNameSet.has(name)
+      ? editForm.jurisdiction_names.filter((n) => n !== name)
+      : [...editForm.jurisdiction_names, name];
+    onEditChange({ ...editForm, jurisdiction_names: next });
+  }
+
+  function removeJurisdictionName(name: string) {
+    onEditChange({
+      ...editForm,
+      jurisdiction_names: editForm.jurisdiction_names.filter((n) => n !== name),
+    });
+  }
+
+  const extraJurisdictionNames = editForm.jurisdiction_names.filter((n) => !knownNameSet.has(n));
 
   return (
     <>
@@ -315,6 +358,57 @@ function QuoteRow({
                       className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
                     />
                   </div>
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Jurisdictions</label>
+                  {jurisdictionOptions.length === 0 ? (
+                    <p className="text-xs text-slate-500">No jurisdiction list loaded.</p>
+                  ) : (
+                    <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white px-2 py-2">
+                      <ul className="space-y-0.5">
+                        {jurisdictionOptions.map((j) => (
+                          <li key={j.id}>
+                            <label className="flex cursor-pointer items-center gap-2.5 px-2 py-1 text-sm text-slate-700 hover:bg-slate-50 rounded">
+                              <input
+                                type="checkbox"
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                checked={selectedNameSet.has(j.name)}
+                                onChange={() => toggleJurisdictionName(j.name)}
+                              />
+                              <span className="min-w-0 flex-1">
+                                {j.name}
+                                {j.abbreviation ? (
+                                  <span className="text-slate-400"> ({j.abbreviation})</span>
+                                ) : null}
+                              </span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {extraJurisdictionNames.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Other tags (not in list)
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {extraJurisdictionNames.map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => removeJurisdictionName(n)}
+                            className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800 hover:bg-emerald-100"
+                          >
+                            {n}
+                            <span className="text-emerald-600" aria-hidden>
+                              ×
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button
