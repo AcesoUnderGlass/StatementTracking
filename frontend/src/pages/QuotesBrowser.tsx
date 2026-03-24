@@ -209,14 +209,14 @@ function VariantSwitcher({
     '3': 'Greenhouse',
   };
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-1.5">
-      <div className="flex items-center gap-1 rounded-full bg-black/80 backdrop-blur-md px-2 py-1.5 shadow-2xl ring-1 ring-white/10">
+    <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1">
+      <div className="flex items-center gap-0.5 rounded-full bg-black/80 backdrop-blur-md px-1 py-1 shadow-2xl ring-1 ring-white/10">
         {(['0', '1', '3'] as const).map((v) => (
           <button
             key={v}
             onClick={() => onSwitch(v)}
             title={`${labels[v]} (⌥${v})`}
-            className={`w-9 h-9 rounded-full text-xs font-semibold transition-all duration-200 ${
+            className={`w-5 h-5 rounded-full text-[9px] font-semibold transition-all duration-200 ${
               variant === v
                 ? 'bg-white text-black shadow-md scale-105'
                 : 'text-white/40 hover:text-white/70 hover:bg-white/10'
@@ -226,7 +226,7 @@ function VariantSwitcher({
           </button>
         ))}
       </div>
-      <span className="text-[10px] text-white/30 pr-2 select-none">⌥ 0/1/3</span>
+      <span className="text-[8px] text-white/30 select-none">⌥ 0/1/3</span>
     </div>
   );
 }

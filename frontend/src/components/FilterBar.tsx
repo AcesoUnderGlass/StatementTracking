@@ -1,4 +1,4 @@
-import { useMemo, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
 
@@ -12,6 +12,22 @@ interface Props {
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 
 export default function FilterBar({ filters, onChange, jurisdictions, topics }: Props) {
+  const jurRef = useRef<HTMLDetailsElement>(null);
+  const topicRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: globalThis.MouseEvent) {
+      if (jurRef.current?.open && !jurRef.current.contains(e.target as Node)) {
+        jurRef.current.open = false;
+      }
+      if (topicRef.current?.open && !topicRef.current.contains(e.target as Node)) {
+        topicRef.current.open = false;
+      }
+    }
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+
   function update(field: keyof QuoteFilters, value: string) {
     onChange({ ...filters, [field]: value || undefined, page: 1 });
   }
@@ -93,7 +109,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         <option value="gov_inst">Gov. Institution</option>
       </select>
 
-      <details className="relative">
+      <details ref={jurRef} className="relative">
         <summary
           className="flex min-w-[11rem] max-w-[14rem] cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-details-marker]:hidden select-none"
           title="Select one or more jurisdictions (quotes matching any)"
@@ -154,7 +170,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         </div>
       </details>
 
-      <details className="relative">
+      <details ref={topicRef} className="relative">
         <summary
           className="flex min-w-[8rem] max-w-[12rem] cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-details-marker]:hidden select-none"
           title="Select one or more topics (quotes matching any)"

@@ -193,7 +193,21 @@ def _fetch_html_article(url: str) -> dict:
     }
 
 
+def _is_youtube_url(url: str) -> bool:
+    try:
+        hostname = (urlparse(url.strip()).hostname or "").lower()
+    except Exception:
+        return False
+    return hostname in {
+        "youtube.com", "www.youtube.com", "m.youtube.com",
+        "youtu.be", "www.youtu.be",
+    }
+
+
 def fetch_article(url: str) -> dict:
+    if _is_youtube_url(url):
+        from .youtube_fetcher import fetch_youtube_transcript
+        return fetch_youtube_transcript(url)
     if _is_pdf_url(url):
         return _fetch_pdf_article(url)
     return _fetch_html_article(url)

@@ -60,7 +60,12 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
     block = _jurisdiction_prompt_block(db)
     topic_block = _topic_prompt_block(db)
     try:
-        raw_quotes = extract_quotes(article_data["text"], block, topic_block)
+        raw_quotes = extract_quotes(
+            article_data["text"],
+            block,
+            topic_block,
+            source_type=article_data.get("source_type", "article"),
+        )
     except ExtractionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
