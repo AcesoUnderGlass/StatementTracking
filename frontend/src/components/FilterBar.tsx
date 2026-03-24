@@ -226,20 +226,43 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         </div>
       </details>
 
-      <input
-        type="date"
-        value={filters.from_date || ''}
-        onChange={(e) => update('from_date', e.target.value)}
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        title="From date"
-      />
-      <input
-        type="date"
-        value={filters.to_date || ''}
-        onChange={(e) => update('to_date', e.target.value)}
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        title="To date"
-      />
+      <div className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/50 px-2.5 py-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 shrink-0">Spoken</span>
+        <input
+          type="date"
+          value={filters.from_date || ''}
+          onChange={(e) => update('from_date', e.target.value)}
+          className="px-2 py-1 border border-blue-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title="Date spoken — from"
+        />
+        <span className="text-blue-300 text-xs">–</span>
+        <input
+          type="date"
+          value={filters.to_date || ''}
+          onChange={(e) => update('to_date', e.target.value)}
+          className="px-2 py-1 border border-blue-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title="Date spoken — to"
+        />
+      </div>
+
+      <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/50 px-2.5 py-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 shrink-0">Added</span>
+        <input
+          type="date"
+          value={filters.added_from_date || ''}
+          onChange={(e) => update('added_from_date', e.target.value)}
+          className="px-2 py-1 border border-amber-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          title="Date added — from"
+        />
+        <span className="text-amber-300 text-xs">–</span>
+        <input
+          type="date"
+          value={filters.added_to_date || ''}
+          onChange={(e) => update('added_to_date', e.target.value)}
+          className="px-2 py-1 border border-amber-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          title="Date added — to"
+        />
+      </div>
 
       <label className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none">
         <input

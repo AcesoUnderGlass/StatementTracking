@@ -75,6 +75,8 @@ export interface QuoteFilters {
   topic_ids?: number[];
   from_date?: string;
   to_date?: string;
+  added_from_date?: string;
+  added_to_date?: string;
   include_duplicates?: boolean;
   page?: number;
   page_size?: number;

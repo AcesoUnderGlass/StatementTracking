@@ -70,6 +70,8 @@ def list_quotes(
     type: Optional[str] = None,
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
+    added_from_date: Optional[date] = None,
+    added_to_date: Optional[date] = None,
     jurisdiction_ids: Optional[list[int]] = Query(None),
     topic_ids: Optional[list[int]] = Query(None),
     include_duplicates: bool = Query(False),
@@ -82,8 +84,6 @@ def list_quotes(
         .options(
             joinedload(Quote.person),
             joinedload(Quote.article),
-            joinedload(Quote.jurisdictions),
-            joinedload(Quote.topics),
         )
     )
 
@@ -104,6 +104,10 @@ def list_quotes(
         query = query.filter(Quote.date_said >= from_date)
     if to_date:
         query = query.filter(Quote.date_said <= to_date)
+    if added_from_date:
+        query = query.filter(func.date(Quote.created_at) >= added_from_date)
+    if added_to_date:
+        query = query.filter(func.date(Quote.created_at) <= added_to_date)
     if jurisdiction_ids:
         qj = quote_jurisdictions
         subq = (
@@ -124,7 +128,7 @@ def list_quotes(
     total = query.count()
 
     quotes = (
-        query.order_by(Quote.date_said.desc().nullslast(), Quote.created_at.desc())
+        query.order_by(Quote.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -145,8 +149,6 @@ def get_quote(quote_id: int, db: Session = Depends(get_db)):
         .options(
             joinedload(Quote.person),
             joinedload(Quote.article),
-            joinedload(Quote.jurisdictions),
-            joinedload(Quote.topics),
         )
         .filter(Quote.id == quote_id)
         .first()
@@ -186,8 +188,6 @@ def update_quote(
         .options(
             joinedload(Quote.person),
             joinedload(Quote.article),
-            joinedload(Quote.jurisdictions),
-            joinedload(Quote.topics),
         )
         .filter(Quote.id == quote_id)
         .first()

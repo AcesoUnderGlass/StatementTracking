@@ -1172,8 +1172,11 @@ function ClassicView({
             <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-4 py-3 font-medium text-slate-500 w-[100px]">
-                    Date
+                  <th className="text-left px-4 py-3 font-medium text-blue-500 w-[100px]">
+                    Spoken
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-amber-500 w-[100px]">
+                    Added
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-slate-500 w-[120px]">
                     Speaker
@@ -1214,7 +1217,7 @@ function ClassicView({
                 {data?.quotes.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center py-8 text-slate-400"
                     >
                       No quotes found.
@@ -1298,8 +1301,11 @@ function ClassicQuoteRow({
         onClick={onToggle}
         className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
       >
-        <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+        <td className="px-4 py-3 text-blue-400 whitespace-nowrap">
           {quote.date_said || '—'}
+        </td>
+        <td className="px-4 py-3 text-amber-400 whitespace-nowrap">
+          {quote.created_at ? new Date(quote.created_at).toLocaleDateString('en-CA') : '—'}
         </td>
         <td className="px-4 py-3 font-medium text-slate-900">
           {quote.person ? (
@@ -1371,7 +1377,7 @@ function ClassicQuoteRow({
       </tr>
       {isExpanded && (
         <tr className="bg-slate-50">
-          <td colSpan={6} className="px-6 py-4">
+          <td colSpan={7} className="px-6 py-4">
             <ExpandedContent
               quote={quote}
               isEditing={isEditing}
