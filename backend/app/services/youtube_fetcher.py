@@ -26,6 +26,14 @@ def is_youtube_url(url: str) -> bool:
     return hostname in _YOUTUBE_HOSTS
 
 
+def _is_shorts_url(url: str) -> bool:
+    try:
+        path = urlparse(url.strip()).path or ""
+    except Exception:
+        return False
+    return bool(re.match(r"^/shorts/[A-Za-z0-9_-]+", path))
+
+
 def _extract_video_id(url: str) -> str:
     parsed = urlparse(url.strip())
     hostname = (parsed.hostname or "").lower()
@@ -112,7 +120,48 @@ def _fetch_video_metadata(url: str) -> dict:
     }
 
 
+_YOUTUBE_WATCH_RE = re.compile(
+    r"(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]{11})"
+)
+
+
+def _find_linked_full_video(url: str, shorts_video_id: str) -> Optional[str]:
+    """Scrape a Shorts page for a link to a longer/original video.
+
+    Returns the full watch URL if found, None otherwise.
+    """
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/125.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    try:
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            resp = client.get(url, headers=headers)
+            resp.raise_for_status()
+    except httpx.HTTPError:
+        return None
+
+    linked_ids = set(_YOUTUBE_WATCH_RE.findall(resp.text))
+    linked_ids.discard(shorts_video_id)
+
+    if linked_ids:
+        full_id = next(iter(linked_ids))
+        return f"https://www.youtube.com/watch?v={full_id}"
+    return None
+
+
 def fetch_youtube_transcript(url: str) -> dict:
+    if _is_shorts_url(url):
+        shorts_id = _extract_video_id(url)
+        full_url = _find_linked_full_video(url, shorts_id)
+        if full_url is None:
+            raise FetchError("YouTube Shorts are not supported")
+        url = full_url
+
     video_id = _extract_video_id(url)
     metadata = _fetch_video_metadata(url)
 
