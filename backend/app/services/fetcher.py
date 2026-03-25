@@ -171,7 +171,7 @@ _SPEAKER_LABEL_RE = re.compile(
 )
 
 
-def _detect_transcript(text: str, title: str | None, url: str) -> bool:
+def _detect_transcript(text: str, title: Optional[str], url: str) -> bool:
     """Heuristic: return True when the page appears to be a transcript
     (hearing, interview, press conference, speech) rather than a
     conventional news article."""
