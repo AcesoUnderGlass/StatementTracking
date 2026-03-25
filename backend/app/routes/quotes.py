@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
 from ..models import Quote, Person, Article, quote_jurisdictions, quote_topics
@@ -90,37 +90,31 @@ def list_quotes(
 ):
     joined_person = False
 
-    query = (
-        db.query(Quote)
-        .options(
-            joinedload(Quote.person),
-            joinedload(Quote.article),
-        )
-    )
+    base = db.query(Quote)
 
     if not include_duplicates:
-        query = query.filter(Quote.is_duplicate == False)  # noqa: E712
+        base = base.filter(Quote.is_duplicate == False)  # noqa: E712
 
     if person_id:
-        query = query.filter(Quote.person_id == person_id)
+        base = base.filter(Quote.person_id == person_id)
     if search:
-        query = query.filter(Quote.quote_text.ilike(f"%{search}%"))
+        base = base.filter(Quote.quote_text.ilike(f"%{search}%"))
     if party:
-        query = query.join(Person).filter(Person.party == party)
+        base = base.join(Person).filter(Person.party == party)
         joined_person = True
     if type:
         if not joined_person:
-            query = query.join(Person)
+            base = base.join(Person)
             joined_person = True
-        query = query.filter(Person.type == type)
+        base = base.filter(Person.type == type)
     if from_date:
-        query = query.filter(Quote.date_said >= from_date)
+        base = base.filter(Quote.date_said >= from_date)
     if to_date:
-        query = query.filter(Quote.date_said <= to_date)
+        base = base.filter(Quote.date_said <= to_date)
     if added_from_date:
-        query = query.filter(func.date(Quote.created_at) >= added_from_date)
+        base = base.filter(func.date(Quote.created_at) >= added_from_date)
     if added_to_date:
-        query = query.filter(func.date(Quote.created_at) <= added_to_date)
+        base = base.filter(func.date(Quote.created_at) <= added_to_date)
     if jurisdiction_ids:
         qj = quote_jurisdictions
         subq = (
@@ -128,7 +122,7 @@ def list_quotes(
             .filter(qj.c.jurisdiction_id.in_(jurisdiction_ids))
             .distinct()
         )
-        query = query.filter(Quote.id.in_(subq))
+        base = base.filter(Quote.id.in_(subq))
     if topic_ids:
         qt = quote_topics
         subq = (
@@ -136,14 +130,14 @@ def list_quotes(
             .filter(qt.c.topic_id.in_(topic_ids))
             .distinct()
         )
-        query = query.filter(Quote.id.in_(subq))
+        base = base.filter(Quote.id.in_(subq))
 
-    total = query.count()
+    total = base.count()
 
     asc = (sort_dir or "desc").lower() == "asc"
     if sort_by == "speaker":
         if not joined_person:
-            query = query.outerjoin(Person)
+            base = base.outerjoin(Person)
         col = Person.name
         order = col.asc().nullslast() if asc else col.desc().nullslast()
     elif sort_by in SORT_COLUMNS and SORT_COLUMNS[sort_by] is not None:
@@ -153,7 +147,11 @@ def list_quotes(
         order = Quote.created_at.desc()
 
     quotes = (
-        query.order_by(order)
+        base.options(
+            selectinload(Quote.person),
+            selectinload(Quote.article),
+        )
+        .order_by(order, Quote.id)
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -172,8 +170,8 @@ def get_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = (
         db.query(Quote)
         .options(
-            joinedload(Quote.person),
-            joinedload(Quote.article),
+            selectinload(Quote.person),
+            selectinload(Quote.article),
         )
         .filter(Quote.id == quote_id)
         .first()
@@ -211,8 +209,8 @@ def update_quote(
     loaded = (
         db.query(Quote)
         .options(
-            joinedload(Quote.person),
-            joinedload(Quote.article),
+            selectinload(Quote.person),
+            selectinload(Quote.article),
         )
         .filter(Quote.id == quote_id)
         .first()
