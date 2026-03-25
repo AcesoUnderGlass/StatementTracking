@@ -4,7 +4,7 @@ export default function QuotesHome() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="overflow-auto">
-        <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto px-6 py-8">
           <QuotesHomeBrowser />
         </div>
       </main>
