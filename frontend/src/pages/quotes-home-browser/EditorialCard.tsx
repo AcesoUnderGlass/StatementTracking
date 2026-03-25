@@ -35,7 +35,6 @@ const EditorialCard = ({
     queryFn: () => fetchQuote(quote.duplicate_of_id!),
     enabled: !!quote.duplicate_of_id,
   });
-  const partyName = quote.person?.party?.toLowerCase() ?? '';
   const partyTagStyle = { background: '#e5f0ea', color: '#2a6e45', border: '1px solid #c0dcc8' };
 
   return (
