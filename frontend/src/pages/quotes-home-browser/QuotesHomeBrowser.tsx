@@ -38,10 +38,12 @@ const QuotesHomeBrowser = () => {
     queryFn: fetchJurisdictions,
   });
 
-  const { data: topicOptions = [] } = useQuery({
+  const { data: topicOptions = [], error: topicError } = useQuery({
     queryKey: ['topics'],
     queryFn: fetchTopics,
   });
+
+  if (topicError) console.error('[topics query error]', topicError);
 
   const updateMut = useMutation({
     mutationFn: ({
