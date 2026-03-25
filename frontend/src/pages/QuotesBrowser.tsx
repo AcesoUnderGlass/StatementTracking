@@ -10,6 +10,7 @@ import {
   deleteQuote,
   type QuoteFilters,
 } from '../api/client';
+import { useUrlFilters } from '../hooks/useUrlFilters';
 import type { JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../types';
 import FilterBar from '../components/FilterBar';
 
@@ -64,12 +65,14 @@ interface QuoteItemProps {
    MAIN COMPONENT — Data logic + variant routing
    ═══════════════════════════════════════════════════════════════════ */
 
+const QUOTES_DEFAULTS: QuoteFilters = { page: 1, page_size: 50 };
+
 export default function QuotesBrowser() {
   const queryClient = useQueryClient();
   const [variant, setVariant] = useState<VariantKey>(
     () => (localStorage.getItem('quotes-variant') as VariantKey) || '0',
   );
-  const [filters, setFilters] = useState<QuoteFilters>({ page: 1, page_size: 50 });
+  const [filters, setFilters] = useUrlFilters(QUOTES_DEFAULTS);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({

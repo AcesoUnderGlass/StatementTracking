@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchPeople } from '../api/client';
 
 export default function People() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get('search') || '';
+  const setSearch = (v: string) => setSearchParams(v ? { search: v } : {}, { replace: true });
 
   const { data: people, isLoading, error } = useQuery({
     queryKey: ['people', search],
