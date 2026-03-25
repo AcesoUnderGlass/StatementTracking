@@ -23,7 +23,7 @@ const EditorialView = ({
 }: ViewProps) => {
   return (
     <div
-      className="-mx-6 -my-8 px-6 py-8 min-h-screen"
+      className="-mx-12 -my-8 px-12 shadow-lg py-8 min-h-screen"
       style={{ background: '#faf7f2' }}
     >
       <div className="text-center mb-8">
@@ -31,14 +31,10 @@ const EditorialView = ({
           className="text-3xl font-bold tracking-[0.18em] uppercase"
           style={{ fontFamily: 'Playfair Display, serif', color: '#1a1a2e' }}
         >
-          The Statement Record
+          Statements on AI
         </h2>
-        <div
-          className="w-20 h-0.5 mx-auto mt-3 mb-2"
-          style={{ background: '#c9a84c' }}
-        />
         <p
-          className="text-sm italic"
+          className="text-sm italic py-2"
           style={{ fontFamily: 'Lora, serif', color: '#8a8070' }}
         >
           Browse and filter AI-related quotes from all tracked speakers.
@@ -51,26 +47,6 @@ const EditorialView = ({
         jurisdictions={jurisdictionOptions}
         topics={topicOptions}
       />
-
-      <div
-        className="mb-6 px-5 py-4 rounded-lg border text-sm"
-        style={{
-          background: '#f5f0e5',
-          borderColor: '#e0d8c8',
-          color: '#6b6050',
-        }}
-      >
-        <span
-          className="font-semibold uppercase text-xs tracking-wider"
-          style={{ fontFamily: 'Playfair Display, serif', color: '#8b6914' }}
-        >
-          Editor&rsquo;s Note:
-        </span>{' '}
-        <span style={{ fontFamily: 'Lora, serif' }}>
-          Duplicate quotes are automatically detected and hidden by default. Use the
-          &ldquo;Show duplicates&rdquo; filter to reveal them.
-        </span>
-      </div>
 
       {error && (
         <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">

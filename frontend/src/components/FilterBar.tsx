@@ -83,13 +83,13 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         value={filters.search || ''}
         onChange={(e) => update('search', e.target.value)}
         placeholder="Search quote text..."
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
 
       <select
         value={filters.party || ''}
         onChange={(e) => update('party', e.target.value)}
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">All parties</option>
         {PARTIES.map((p) => (
@@ -100,7 +100,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
       <select
         value={filters.type || ''}
         onChange={(e) => update('type', e.target.value)}
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">All types</option>
         <option value="elected">Elected</option>

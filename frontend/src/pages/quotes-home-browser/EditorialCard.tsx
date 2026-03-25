@@ -44,7 +44,7 @@ const EditorialCard = ({
   return (
     <div
       onClick={onToggle}
-      className="grid gap-6 cursor-pointer md:grid-cols-[minmax(0,1fr)_260px]"
+      className="grid gap-6 md:grid-cols-[minmax(0,1fr)_260px]"
       style={{ animation: `fadeInUp 0.4s ease-out ${index * 50}ms both` }}
     >
       <div
@@ -54,7 +54,7 @@ const EditorialCard = ({
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}
       >
-        <div className="px-6 py-5">
+        <div className="px-6 pt-5 pb-3 flex flex-col justify-center">
           <p className="leading-relaxed pr-12" style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}
           >
             &ldquo;{quote.quote_text}&rdquo;
@@ -91,13 +91,18 @@ const EditorialCard = ({
       </div>
 
       <div className="py-1 flex flex-col justify-start pr-8">
+        {quote.article?.title && (
+          <p className="mt-3 mb-2 text-sm leading-tight">
+            {quote.article.title}
+          </p>
+        )}
         {quote.context && (
           <div className="text-xs text-gray-500">
               {quote.context}
           </div>
         )}
         {quote.article && (
-          <p className="mt-3 mb-1 text-xs text-blue-600">
+          <p className="mt-2 mb-1 text-xs text-blue-600">
             <a
               href={quote.article.url}
               target="_blank"
@@ -125,7 +130,7 @@ const EditorialCard = ({
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {quote.person?.party && (
               <span
-                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                className="px-2 py-0.5 rounded-sm text-[10px] font-medium"
                 style={{
                   background: '#e5f0ea',
                   color: '#2a6e45',
@@ -138,7 +143,7 @@ const EditorialCard = ({
             {(quote.jurisdictions ?? []).map((tag) => (
               <span
                 key={`j-${tag}`}
-                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                className="px-2 py-0.5 rounded-sm text-[10px] font-medium"
                 style={{
                   background: '#e5eef5',
                   color: '#2a5080',
@@ -151,7 +156,7 @@ const EditorialCard = ({
             {(quote.topics ?? []).map((tag) => (
               <span
                 key={`t-${tag}`}
-                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                className="px-2 py-0.5 rounded-sm text-[10px] font-medium"
                 style={{
                   background: '#efe5f5',
                   color: '#6b2fa0',
@@ -164,7 +169,6 @@ const EditorialCard = ({
           </div>
         )}
 
-        {!isEditing && (
           <>
             {quote.is_duplicate && originalQuote && (
               <div
@@ -209,7 +213,7 @@ const EditorialCard = ({
             )}
 
             {quote.date_recorded && <>
-              <p className="text-xs mt-2" style={{ color: '#9a9287' }}>
+              <p className="text-[10px] mt-2" style={{ color: '#9a9287' }}>
                 Added {quote.date_recorded}
               </p>
             </>}
@@ -217,20 +221,22 @@ const EditorialCard = ({
             <div className="flex gap-3 absolute top-1 right-0 opacity-25 hover:opacity-100 transition-opacity duration-100 cursor-pointer">
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onStartEdit();
+                  if (isEditing) onCancelEdit();
+                  else {
+                    e.stopPropagation();
+                    onStartEdit();
+                  }
                 }}
                 className="text-sm font-medium"
-                style={{ color: '#2a5080' }}
+                style={{ color: isEditing ? '#9a9287' : '#2a5080' }}
               >
                 <Pencil size={14} />
               </button>
             </div>
           </>
-        )}
       </div>
       {isEditing && (
-        <div className="md:col-span-2" onClick={(e) => e.stopPropagation()}>
+        <div className="md:col-span-2 bg-white p-3 rounded-md" onClick={(e) => e.stopPropagation()}>
           <SharedEditForm
             editForm={editForm}
             setEditForm={setEditForm}
