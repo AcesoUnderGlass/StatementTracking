@@ -49,13 +49,13 @@ const EditorialCard = ({
         }}
       >
         <div className="px-6 py-5">
-          <p className="leading-relaxed pr-12 italic" style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}
+          <p className="leading-relaxed pr-12" style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}
           >
             &ldquo;{quote.quote_text}&rdquo;
           </p>
 
           <div className="mt-3 flex items-baseline gap-1">
-            <span style={{ color: '#c9a84c', fontFamily: 'Playfair Display, serif' }}>
+            <span style={{ paddingRight: 4, color: '#c9a84c', fontFamily: 'Playfair Display, serif' }}>
               &mdash;
             </span>
             <div className="min-w-0">
