@@ -1,5 +1,6 @@
-import FilterBar from '../../components/FilterBar';
+import FilterBarHome from '../../components/FilterBarHome';
 import EditorialCard from './EditorialCard';
+import SpeakerSourcesList from './SpeakerSourcesList';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
 
@@ -49,7 +50,9 @@ const EditorialView = ({
         </p>
       </div>
 
-      <FilterBar
+      {/* <SpeakerSourcesList /> */}
+
+      <FilterBarHome
         filters={filters}
         onChange={setFilters}
         jurisdictions={jurisdictionOptions}
