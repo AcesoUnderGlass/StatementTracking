@@ -164,52 +164,6 @@ def list_quotes(
         "page_size": page_size,
     }
 
-
-@router.get("/speaker-sources")
-def list_speaker_sources(db: Session = Depends(get_db)):
-    quote_count_rows = (
-        db.query(Quote.person_id, func.count(Quote.id))
-        .group_by(Quote.person_id)
-        .all()
-    )
-    quote_counts_by_person_id = {
-        person_id: quote_count for person_id, quote_count in quote_count_rows
-    }
-    total_quotes = db.query(func.count(Quote.id)).scalar() or 0
-    rows = (
-        db.query(Person.id, Person.name, Article.url)
-        .join(Quote, Quote.person_id == Person.id)
-        .join(Article, Quote.article_id == Article.id)
-        .distinct()
-        .all()
-    )
-    speaker_to_sources = {}
-    for person_id, person_name, article_url in rows:
-        if person_id not in speaker_to_sources:
-            speaker_to_sources[person_id] = {
-                "person_id": person_id,
-                "name": person_name,
-                "source_urls": set(),
-                "quote_count": quote_counts_by_person_id.get(person_id, 0),
-            }
-        if article_url:
-            speaker_to_sources[person_id]["source_urls"].add(article_url)
-    speakers = []
-    sorted_speakers = sorted(
-        speaker_to_sources.values(),
-        key=lambda speaker: speaker["name"].lower(),
-    )
-    for speaker in sorted_speakers:
-        source_urls = sorted(speaker["source_urls"])
-        speakers.append({
-            "person_id": speaker["person_id"],
-            "name": speaker["name"],
-            "source_count": len(source_urls),
-            "quote_count": speaker["quote_count"],
-        })
-    return {"speakers": speakers, "total_quotes": total_quotes}
-
-
 @router.get("/{quote_id}")
 def get_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = (

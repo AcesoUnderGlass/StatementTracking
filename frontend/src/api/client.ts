@@ -13,7 +13,6 @@ import type {
   DuplicateCheckResult,
   JurisdictionRow,
   TopicRow,
-  SpeakerSourcesResponse,
 } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
@@ -119,10 +118,6 @@ export function fetchTopics(): Promise<TopicRow[]> {
 
 export function fetchQuote(id: number): Promise<QuoteWithDetails> {
   return request(`/quotes/${id}`);
-}
-
-export function fetchSpeakerSources(): Promise<SpeakerSourcesResponse> {
-  return request('/quotes/speaker-sources');
 }
 
 export function updateQuote(

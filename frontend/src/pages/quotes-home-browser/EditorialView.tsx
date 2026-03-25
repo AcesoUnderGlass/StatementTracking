@@ -1,6 +1,5 @@
 import FilterBarHome from '../../components/FilterBarHome';
 import EditorialCard from './EditorialCard';
-import SpeakerSourcesList from './SpeakerSourcesList';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
 
@@ -48,8 +47,6 @@ const EditorialView = ({
           Browse and filter AI-related quotes from prominent speakers.
         </p>
       </div>
-
-      {/* <SpeakerSourcesList /> */}
 
       <FilterBarHome
         filters={filters}

@@ -153,18 +153,6 @@ export interface Stats {
   }[];
 }
 
-export interface SpeakerSourceItem {
-  person_id: number;
-  name: string;
-  source_count: number;
-  quote_count: number;
-}
-
-export interface SpeakerSourcesResponse {
-  speakers: SpeakerSourceItem[];
-  total_quotes: number;
-}
-
 export interface PersonDetail extends Person {
   quotes: {
     id: number;
