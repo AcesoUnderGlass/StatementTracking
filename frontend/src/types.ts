@@ -43,9 +43,12 @@ export interface ExtractedQuote {
   topics: string[];
 }
 
+export type SourceType = 'article' | 'youtube_transcript' | 'page_transcript' | 'press_statement';
+
 export interface ExtractResponse {
   article: ArticleMetadata;
   quotes: ExtractedQuote[];
+  source_type: SourceType;
 }
 
 export interface QuoteSaveItem {

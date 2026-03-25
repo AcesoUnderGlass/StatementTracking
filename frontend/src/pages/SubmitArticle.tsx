@@ -1,9 +1,16 @@
 import { useState, useMemo } from 'react';
 import { extractArticle, saveArticle, checkDuplicates } from '../api/client';
-import type { ArticleMetadata, PersonCreate, QuoteSaveItem } from '../types';
+import type { ArticleMetadata, PersonCreate, QuoteSaveItem, SourceType } from '../types';
 import QuoteCard, { type QuoteCardData } from '../components/QuoteCard';
 
 type SubmitMode = 'extract' | 'manual';
+
+const SOURCE_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  article: { label: 'Article', color: 'bg-slate-100 text-slate-600' },
+  youtube_transcript: { label: 'YouTube Transcript', color: 'bg-red-50 text-red-700' },
+  page_transcript: { label: 'Transcript', color: 'bg-purple-50 text-purple-700' },
+  press_statement: { label: 'Press Statement', color: 'bg-blue-50 text-blue-700' },
+};
 
 /** Deduped new speakers from any quote on this page so every card can attach the same person. */
 function collectPendingSpeakers(quotes: QuoteCardData[]): PersonCreate[] {
@@ -43,6 +50,7 @@ export default function SubmitArticle() {
   const [quotes, setQuotes] = useState<QuoteCardData[]>([]);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [sourceType, setSourceType] = useState<SourceType>('article');
 
   function switchMode(newMode: SubmitMode) {
     setMode(newMode);
@@ -51,6 +59,7 @@ export default function SubmitArticle() {
     setQuotes([]);
     setError(null);
     setSuccess(null);
+    setSourceType('article');
     if (newMode === 'manual') {
       setArticle({ title: null, publication: null, published_date: null, url: '' });
       setQuotes([blankQuoteCard()]);
@@ -70,10 +79,12 @@ export default function SubmitArticle() {
     setArticle(null);
     setQuotes([]);
     setSuccess(null);
+    setSourceType('article');
 
     try {
       const res = await extractArticle(url.trim());
       setArticle(res.article);
+      setSourceType(res.source_type);
 
       const cards: QuoteCardData[] = res.quotes.map((q) => ({
         speaker_name: q.speaker_name,
@@ -275,9 +286,19 @@ export default function SubmitArticle() {
       {article && !loading && (
         <>
           <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Article Details
-            </h3>
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                Article Details
+              </h3>
+              {mode === 'extract' && sourceType !== 'article' && (() => {
+                const st = SOURCE_TYPE_LABELS[sourceType] || SOURCE_TYPE_LABELS.article;
+                return (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${st.color}`}>
+                    {st.label}
+                  </span>
+                );
+              })()}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-slate-500 mb-1">
@@ -345,7 +366,7 @@ export default function SubmitArticle() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-lg font-semibold text-slate-900">
               {mode === 'manual' ? 'Quotes' : 'Extracted Quotes'} ({quotes.length})
             </h3>
@@ -356,6 +377,13 @@ export default function SubmitArticle() {
               <span>{approvedCount} approved</span>
             </div>
           </div>
+          {mode === 'extract' && sourceType !== 'article' && (
+            <p className="text-xs text-slate-500 mb-4">
+              {sourceType === 'press_statement'
+                ? 'Detected as a single-voice document — the full text was treated as quotable.'
+                : 'Detected as a transcript — the full text was treated as quotable.'}
+            </p>
+          )}
 
           <div className="space-y-4 mb-4">
             {quotes.map((q, i) => (

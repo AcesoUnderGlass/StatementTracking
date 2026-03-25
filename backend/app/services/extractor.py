@@ -134,6 +134,51 @@ PAGE_TRANSCRIPT_SYSTEM_PROMPT = (
     '"jurisdictions": string[], "topics": string[] }] }'
 )
 
+PRESS_STATEMENT_SYSTEM_PROMPT = (
+    "You are extracting notable, substantive statements about artificial intelligence "
+    "from an official document written in a single voice — such as a press release, "
+    "executive order, policy statement, fact sheet, open letter, or similar. "
+    "The entire page is attributable to one author or issuing authority; there are no "
+    "separate quoted sources to look for. The full text is quotable — do NOT rely on "
+    "quotation marks. "
+    "Identify the author or issuing authority from bylines, headers, signatures, "
+    "organizational branding, or contextual clues on the page. Use that as the "
+    "speaker_name. If the document is issued by an organization (e.g. 'The White House', "
+    "'Department of Commerce') rather than a named individual, use the organization name "
+    "as speaker_name and its description as speaker_title. If both an individual and an "
+    "organization are identified, prefer the individual as speaker_name with the "
+    "organization in speaker_title. "
+    "Focus on substantive AI-related policy positions, commitments, announcements, "
+    "directives, proposals, and analysis. Skip purely procedural, boilerplate, or "
+    "administrative language. "
+    "For each extracted statement return: the substantive text (preserving the author's "
+    "meaning and wording), the author's name and title, the speaker_type classification, "
+    "and one to two sentences of context about what the statement addresses. "
+    "speaker_type must be one of: 'elected' (elected officials), 'staff' (government "
+    "or organizational staff), 'think_tank' (think tanks or research organizations), "
+    "or 'gov_inst' (government agencies or institutions). If the author does not fit "
+    "these categories, still extract the statement but use the closest matching type. "
+    "Merge consecutive sentences on the same point into a single quote. Only create "
+    "separate entries for clearly distinct policy points, announcements, or topics "
+    "within the document. "
+    "For each quote, also assign jurisdiction tags describing the subject matter of "
+    "the statement (NOT the speaker's location or identity). Choose exclusively from "
+    "the canonical list provided in the user message below. When a specific US state is "
+    "relevant, tag both the state name and 'US-state'. When a specific US city or "
+    "county is relevant, tag both the locality name and 'US-local'. Only create a new "
+    "tag if absolutely nothing in the canonical list fits; never create synonyms of "
+    "existing tags. Return jurisdictions as an array of tag name strings. "
+    "For each quote, also assign topic tags describing what the quote is about. "
+    "Strongly prefer tags from the canonical topic list provided in the user message. "
+    "A quote may have more than one topic. Only create a new topic tag if absolutely "
+    "nothing in the canonical list fits; never create synonyms of existing tags. "
+    "Return topics as an array of tag name strings. "
+    "Return a JSON object only, no other "
+    'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
+    '"speaker_type": string, "quote_text": string, "context": string, '
+    '"jurisdictions": string[], "topics": string[] }] }'
+)
+
 SYSTEM_PROMPT = ARTICLE_SYSTEM_PROMPT
 
 
@@ -164,6 +209,12 @@ def extract_quotes(
         extract_instruction = (
             "Extract all notable AI-related statements from the following "
             "transcript:"
+        )
+    elif source_type == "press_statement":
+        system_prompt = PRESS_STATEMENT_SYSTEM_PROMPT
+        extract_instruction = (
+            "Extract all notable AI-related statements from the following "
+            "official document:"
         )
     else:
         system_prompt = ARTICLE_SYSTEM_PROMPT

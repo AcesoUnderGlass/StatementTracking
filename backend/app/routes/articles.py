@@ -68,6 +68,7 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
     except FetchError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    source_type = article_data.get("source_type", "article")
     block = _jurisdiction_prompt_block(db)
     topic_block = _topic_prompt_block(db)
     try:
@@ -75,7 +76,7 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
             article_data["text"],
             block,
             topic_block,
-            source_type=article_data.get("source_type", "article"),
+            source_type=source_type,
         )
     except ExtractionError as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -100,7 +101,7 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
         url=article_data["url"],
     )
 
-    return ExtractResponse(article=article_meta, quotes=quotes)
+    return ExtractResponse(article=article_meta, quotes=quotes, source_type=source_type)
 
 
 @router.post("/save", response_model=SaveResponse)

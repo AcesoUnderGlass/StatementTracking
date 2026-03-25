@@ -78,6 +78,7 @@ class ExtractRequest(BaseModel):
 class ExtractResponse(BaseModel):
     article: ArticleMetadata
     quotes: List[ExtractedQuote]
+    source_type: str = "article"
 
 
 class QuoteSaveItem(BaseModel):

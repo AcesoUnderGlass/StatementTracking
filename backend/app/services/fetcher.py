@@ -171,6 +171,42 @@ _SPEAKER_LABEL_RE = re.compile(
 )
 
 
+_PRESS_STATEMENT_URL_KEYWORDS = re.compile(
+    r"press[-_ ]?release|press[-_ ]?statement|official[-_ ]?statement"
+    r"|executive[-_ ]?order|memorand(?:um|a)\b|proclamation"
+    r"|fact[-_ ]?sheet|readout|communiqu[eé]"
+    r"|white[-_ ]?paper|whitepaper"
+    r"|open[-_ ]?letter|letter[-_ ]?to[-_ ]"
+    r"|/(?:statements?|press[-_ ]?releases?"
+    r"|announcements?|presidential[-_ ]?actions?)(?:/|$)",
+    re.IGNORECASE,
+)
+
+_GOV_DOMAIN_RE = re.compile(r"\.gov(?:\.[a-z]{2})?$|\.mil$", re.IGNORECASE)
+
+
+def _detect_press_statement(text: str, title: Optional[str], url: str) -> bool:
+    """Heuristic: return True when the page is a single-voice official document
+    (press release, executive order, fact sheet, open letter, etc.) whose full
+    text is attributable to one author or issuing authority."""
+    url_and_title = f"{url} {title or ''}"
+    if _PRESS_STATEMENT_URL_KEYWORDS.search(url_and_title):
+        return True
+
+    hostname = urlparse(url).hostname or ""
+    hostname = hostname.removeprefix("www.")
+
+    if hostname in PUBLICATION_LOOKUP:
+        return False
+
+    if _GOV_DOMAIN_RE.search(hostname) and len(text) > 500:
+        quote_chars = text.count('"') + text.count('\u201c') + text.count('\u201d')
+        if quote_chars < max(4, len(text) // 500):
+            return True
+
+    return False
+
+
 def _detect_transcript(text: str, title: Optional[str], url: str) -> bool:
     """Heuristic: return True when the page appears to be a transcript
     (hearing, interview, press conference, speech) rather than a
@@ -243,6 +279,8 @@ def _fetch_html_article(url: str) -> dict:
 
     if _detect_transcript(text, title, url):
         result["source_type"] = "page_transcript"
+    elif _detect_press_statement(text, title, url):
+        result["source_type"] = "press_statement"
 
     return result
 
