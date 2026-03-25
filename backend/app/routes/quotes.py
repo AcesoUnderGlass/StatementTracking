@@ -164,7 +164,6 @@ def list_quotes(
         "page_size": page_size,
     }
 
-
 @router.get("/{quote_id}")
 def get_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = (

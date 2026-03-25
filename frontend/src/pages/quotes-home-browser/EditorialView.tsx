@@ -1,4 +1,4 @@
-import FilterBar from '../../components/FilterBar';
+import FilterBarHome from '../../components/FilterBarHome';
 import EditorialCard from './EditorialCard';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
@@ -24,8 +24,7 @@ const EditorialView = ({
 }: ViewProps) => {
   return (
     <div
-      className="-mx-12 -my-8 px-12 shadow-lg py-8 min-h-screen"
-      style={{ background: '#faf7f2' }}
+      className="-mx-12 -my-8 px-12 py-8 min-h-screen"
     >
       <Link
         to="/quotes"
@@ -45,11 +44,11 @@ const EditorialView = ({
           className="text-sm italic py-2"
           style={{ fontFamily: 'Lora, serif', color: '#8a8070' }}
         >
-          Browse and filter AI-related quotes from all tracked speakers.
+          Browse and filter AI-related quotes from prominent speakers.
         </p>
       </div>
 
-      <FilterBar
+      <FilterBarHome
         filters={filters}
         onChange={setFilters}
         jurisdictions={jurisdictionOptions}
@@ -71,12 +70,13 @@ const EditorialView = ({
         </div>
       ) : (
         <>
-          <div className="max-w-6xl mx-auto space-y-4">
+          <div className="max-w-6xl mx-auto">
             {data?.quotes.map((q, i) => (
               <EditorialCard
                 key={q.id}
                 quote={q}
                 index={i}
+                isSortingByAddedDate={!filters.sort_by || filters.sort_by === 'created_at'}
                 isEditing={editing === q.id}
                 editForm={editForm}
                 setEditForm={setEditForm}

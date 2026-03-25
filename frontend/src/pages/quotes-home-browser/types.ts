@@ -32,6 +32,7 @@ export interface ViewProps {
 export interface QuoteItemProps {
   quote: QuoteWithDetails;
   index: number;
+  isSortingByAddedDate: boolean;
   isEditing: boolean;
   editForm: EditFormState;
   setEditForm: (f: EditFormState) => void;

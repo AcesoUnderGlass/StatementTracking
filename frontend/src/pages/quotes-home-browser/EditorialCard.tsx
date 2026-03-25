@@ -8,6 +8,7 @@ import type { QuoteItemProps } from './types';
 const EditorialCard = ({
   quote,
   index,
+  isSortingByAddedDate,
   isEditing,
   editForm,
   setEditForm,
@@ -35,22 +36,17 @@ const EditorialCard = ({
     enabled: !!quote.duplicate_of_id,
   });
   const partyName = quote.person?.party?.toLowerCase() ?? '';
-  const borderLeftColor = partyName.includes('republican')
-    ? '#dc2626'
-    : partyName.includes('democrat')
-      ? '#2563eb'
-      : '#c9a84c';
+  const partyTagStyle = { background: '#e5f0ea', color: '#2a6e45', border: '1px solid #c0dcc8' };
 
   return (
     <div
       onClick={onToggle}
-      className="grid gap-6 md:grid-cols-[minmax(0,1fr)_350px]"
+      className="grid gap-6 md:grid-cols-[minmax(0,1fr)_350px] border-b border-slate-300 group"
       style={{ animation: `fadeInUp 0.4s ease-out ${index * 50}ms both` }}
     >
       <div
-        className="bg-white border-l-4 rounded-r-lg transition-all duration-300 flex flex-col justify-center px-6 pt-5 pb-4"
+        className="bg-white transition-all duration-300 flex flex-col justify-center px-6 pt-5 pb-5"
         style={{
-          borderLeftColor,
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}
       >
@@ -59,37 +55,37 @@ const EditorialCard = ({
             &ldquo;{quote.quote_text}&rdquo;
           </p>
 
-          <div className="mt-3 flex items-baseline gap-1">
-            <span style={{ paddingRight: 4, color: '#c9a84c', fontFamily: 'Playfair Display, serif' }}>
+          <div className="mt-3 flex items-baseline gap-1" style={{ paddingRight: 4, fontFamily: 'Playfair Display, serif' }}>
+            <span>
               &mdash;
             </span>
             <div className="min-w-0">
-            {quote.person ? (
-              <Link
-                to={`/people/${quote.person.id}`}
-                className="font-semibold hover:underline"
-                style={{ fontFamily: 'Playfair Display, serif', color: '#1a1a2e' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {quote.person.name}
-              </Link>
-            ) : (
-              <span style={{ color: '#6b6560' }}>Unknown</span>
-            )}
-            {quote.person?.role && (
-              <span className="text-sm">
-                , {quote.person.role},{" "} 
-                {quote.date_said && <span className="text-xs opacity-50">{new Date(quote.date_said).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>}
-              </span>
-            )}
+              {quote.person ? (
+                <Link
+                  to={`/people/${quote.person.id}`}
+                  className="font-semibold hover:underline"
+                  style={{ fontFamily: 'Playfair Display, serif', color: '#1a1a2e' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {quote.person.name}
+                </Link>
+              ) : (
+                <span style={{ color: '#6b6560' }}>Unknown</span>
+              )}
+              {quote.person?.role && (
+                <span className="text-sm">
+                  , {quote.person.role},{" "} 
+                  {quote.date_said && <span className="opacity-50">{new Date(quote.date_said).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>}
+                </span>
+              )}
 
             </div>
           </div>
       </div>
 
-      <div className="py-1 flex flex-col justify-start pr-6">
+      <div className="py-1 flex flex-col justify-center pr-6 py-4">
         {quote.article?.title && (
-          <p className="mt-3 mb-2 text-sm leading-tight">
+          <p className="mt-3 mb-2 text-xs text-black font-semibold leading-tight">
             {quote.article.title}
           </p>
         )}
@@ -128,11 +124,7 @@ const EditorialCard = ({
             {quote.person?.party && (
               <span
                 className="px-2 py-0.5 rounded-sm text-[10px] font-medium"
-                style={{
-                  background: '#e5f0ea',
-                  color: '#2a6e45',
-                  border: '1px solid #c0dcc8',
-                }}
+                style={partyTagStyle}
               >
                 {quote.person.party}
               </span>
@@ -209,13 +201,13 @@ const EditorialCard = ({
               </div>
             )}
 
-            {quote.date_recorded && <>
-              <p className="text-[10px] mt-2" style={{ color: '#9a9287' }}>
+            {isSortingByAddedDate && quote.date_recorded && <>
+              <p className="text-xs mt-3" style={{ opacity: 0.35 }}>
                 Added {quote.date_recorded}
               </p>
             </>}
 
-            <div className="flex gap-3 absolute top-1 right-0 opacity-25 hover:opacity-100 transition-opacity duration-100 cursor-pointer">
+            <div className="flex gap-3 absolute top-2 right-2 opacity-0 group-hover:opacity-50 hover:opacity-100 transition-opacity duration-100 cursor-pointer">
               <button
                 onClick={(e) => {
                   if (isEditing) onCancelEdit();
@@ -224,7 +216,7 @@ const EditorialCard = ({
                     onStartEdit();
                   }
                 }}
-                className="text-sm font-medium"
+                className="text-sm font-medium cursor-pointer "
                 style={{ color: isEditing ? '#9a9287' : '#2a5080' }}
               >
                 <Pencil size={14} />
