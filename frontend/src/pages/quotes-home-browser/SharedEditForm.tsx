@@ -9,6 +9,7 @@ const SharedEditForm = ({
   topicOptions,
   onSave,
   onCancel,
+  onDelete,
 }: {
   editForm: EditFormState;
   setEditForm: (f: EditFormState) => void;
@@ -16,6 +17,7 @@ const SharedEditForm = ({
   topicOptions: TopicRow[];
   onSave: () => void;
   onCancel: () => void;
+  onDelete: () => void;
 }) => {
   const [jurisdictionFilter, setJurisdictionFilter] = useState('');
   const [topicFilter, setTopicFilter] = useState('');
@@ -250,6 +252,12 @@ const SharedEditForm = ({
           className="px-4 py-2 text-sm transition text-slate-600 hover:text-slate-800"
         >
           Cancel
+        </button>
+        <button
+          onClick={onDelete}
+          className="px-4 py-2 text-sm transition text-red-700 hover:text-red-900"
+        >
+          Delete
         </button>
       </div>
     </div>

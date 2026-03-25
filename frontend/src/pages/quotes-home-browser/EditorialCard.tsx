@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Link2 } from 'lucide-react';
 import { fetchQuote } from '../../api/client';
 import SharedEditForm from './SharedEditForm';
 import type { QuoteItemProps } from './types';
@@ -20,6 +21,15 @@ const EditorialCard = ({
   onDelete,
   onViewOriginal,
 }: QuoteItemProps) => {
+  const articleDomain = quote.article?.url
+    ? (() => {
+        try {
+          return new URL(quote.article.url).hostname.replace(/^www\./, '');
+        } catch {
+          return quote.article.url;
+        }
+      })()
+    : '';
   const { data: originalQuote } = useQuery({
     queryKey: ['quote', quote.duplicate_of_id],
     queryFn: () => fetchQuote(quote.duplicate_of_id!),
@@ -27,25 +37,26 @@ const EditorialCard = ({
   });
 
   return (
-    <div
-      onClick={onToggle}
-      className="relative bg-white border-l-4 rounded-r-lg cursor-pointer transition-all duration-300"
-      style={{
-        borderLeftColor: '#c9a84c',
-        boxShadow: isExpanded
-          ? '0 4px 20px rgba(0,0,0,0.08)'
-          : '0 1px 4px rgba(0,0,0,0.06)',
-        animation: `fadeInUp 0.4s ease-out ${index * 50}ms both`,
-      }}
-    >
+    <div>
       <div
-        className="absolute top-2 right-5 text-7xl leading-none select-none pointer-events-none"
-        style={{ fontFamily: 'Playfair Display, serif', color: '#f0e8d8' }}
+        onClick={onToggle}
+        className="relative bg-white border-l-4 rounded-r-lg cursor-pointer transition-all duration-300"
+        style={{
+          borderLeftColor: '#c9a84c',
+          boxShadow: isExpanded
+            ? '0 4px 20px rgba(0,0,0,0.08)'
+            : '0 1px 4px rgba(0,0,0,0.06)',
+          animation: `fadeInUp 0.4s ease-out ${index * 50}ms both`,
+        }}
       >
-        &ldquo;
-      </div>
+        <div
+          className="absolute top-2 right-5 text-7xl leading-none select-none pointer-events-none"
+          style={{ fontFamily: 'Playfair Display, serif', color: '#f0e8d8' }}
+        >
+          &ldquo;
+        </div>
 
-      <div className="px-6 py-5 relative">
+        <div className="px-6 py-5 relative">
         <p
           className="leading-relaxed pr-12 italic"
           style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}
@@ -77,18 +88,17 @@ const EditorialCard = ({
         </div>
 
         {quote.article && (
-              <p className="mt-3 text-sm" style={{ color: '#9a9287' }}>
-                Source:{' '}
+              <p className="mt-3 text-sm text-blue-500">
+                <Link2 size={13} className="inline mb-0.5 mr-1" />
                 <a
                   href={quote.article.url}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:underline"
-                  style={{ color: '#2a5080' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {quote.article.title || quote.article.url}
-                </a>
+                </a>, <span>{articleDomain}</span>
               </p>
             )}
 
@@ -98,12 +108,6 @@ const EditorialCard = ({
           style={{ color: '#a09880' }}
         >
           {quote.date_said && <span>{quote.date_said}</span>}
-          {quote.article?.publication && (
-            <span className="italic">
-              {quote.date_said ? '· ' : ''}
-              {quote.article.publication}
-            </span>
-          )}
           {quote.is_duplicate && (
             <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200">
               Duplicate
@@ -154,97 +158,92 @@ const EditorialCard = ({
           </div>
         )}
 
-        {isEditing ? (
-          <div className="mt-4" onClick={(e) => e.stopPropagation()}>
-            <SharedEditForm
-              editForm={editForm}
-              setEditForm={setEditForm}
-              jurisdictionOptions={jurisdictionOptions}
-              topicOptions={topicOptions}
-              onSave={onSaveEdit}
-              onCancel={onCancelEdit}
-            />
-          </div>
-        ) : (
-          <>
-            {quote.is_duplicate && originalQuote && (
-              <div
-                className="mt-3 px-3 py-2 text-sm border"
-                style={{ borderColor: '#e7d7b1', background: '#f8f1df', color: '#7a6123' }}
-              >
-                <p className="font-medium text-xs uppercase tracking-wider mb-1.5">Duplicate of</p>
-                <blockquote className="text-xs italic leading-relaxed border-l-2 pl-2.5" style={{ borderColor: '#d8be7a', color: '#6f5312' }}>
-                  &ldquo;
-                  {originalQuote.quote_text.length > 200
-                    ? originalQuote.quote_text.substring(0, 200) + '...'
-                    : originalQuote.quote_text}
-                  &rdquo;
-                </blockquote>
-                <div className="flex items-center gap-3 mt-2 text-xs">
-                  {originalQuote.article && (
-                    <a
-                      href={originalQuote.article.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline"
-                      style={{ color: '#8b6914' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {originalQuote.article.title ||
-                        originalQuote.article.publication ||
-                        'Source article'}
-                    </a>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewOriginal(originalQuote.id);
-                    }}
-                    className="underline font-medium"
-                    style={{ color: '#8b6914' }}
-                  >
-                    Jump to original
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {quote.context && (
-              <p className="mt-3 text-sm" style={{ color: '#6b6560' }}>
-                <span className="font-medium">Context:</span> {quote.context}
-              </p>
-            )}
-            {quote.date_recorded && (
-              <p className="mt-3 text-sm" style={{ color: '#9a9287' }}>
-                <span className="font-medium">Recorded:</span> {quote.date_recorded}
-              </p>
-            )}
-
-            <div className="mt-3 flex gap-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartEdit();
-                }}
-                className="text-sm font-medium"
-                style={{ color: '#2a5080' }}
-              >
-                Edit
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                className="text-sm font-medium"
-                style={{ color: '#b03a2e' }}
-              >
-                Delete
-              </button>
+          {isEditing ? (
+            <div className="mt-4" onClick={(e) => e.stopPropagation()}>
+              <SharedEditForm
+                editForm={editForm}
+                setEditForm={setEditForm}
+                jurisdictionOptions={jurisdictionOptions}
+                topicOptions={topicOptions}
+                onSave={onSaveEdit}
+                onCancel={onCancelEdit}
+                onDelete={onDelete}
+              />
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              {quote.is_duplicate && originalQuote && (
+                <div
+                  className="mt-3 px-3 py-2 text-sm border"
+                  style={{ borderColor: '#e7d7b1', background: '#f8f1df', color: '#7a6123' }}
+                >
+                  <p className="font-medium text-xs uppercase tracking-wider mb-1.5">Duplicate of</p>
+                  <blockquote className="text-xs italic leading-relaxed border-l-2 pl-2.5" style={{ borderColor: '#d8be7a', color: '#6f5312' }}>
+                    &ldquo;
+                    {originalQuote.quote_text.length > 200
+                      ? originalQuote.quote_text.substring(0, 200) + '...'
+                      : originalQuote.quote_text}
+                    &rdquo;
+                  </blockquote>
+                  <div className="flex items-center gap-3 mt-2 text-xs">
+                    {originalQuote.article && (
+                      <a
+                        href={originalQuote.article.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline"
+                        style={{ color: '#8b6914' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {originalQuote.article.title ||
+                          originalQuote.article.publication ||
+                          'Source article'}
+                      </a>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewOriginal(originalQuote.id);
+                      }}
+                      className="underline font-medium"
+                      style={{ color: '#8b6914' }}
+                    >
+                      Jump to original
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {quote.date_recorded && (
+                <p className="mt-3 text-sm" style={{ color: '#9a9287' }}>
+                  <span className="font-medium">Recorded:</span> {quote.date_recorded}
+                </p>
+              )}
+
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartEdit();
+                  }}
+                  className="text-sm font-medium"
+                  style={{ color: '#2a5080' }}
+                >
+                  Edit
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+      {!isEditing && quote.context && (
+        <div
+          className="mt-2 ml-6 px-4 py-3 text-sm border-l-2"
+          style={{ borderColor: '#d8c8a0', color: '#6b6560', opacity: 0.78 }}
+        >
+          <span className="font-medium">Context:</span> {quote.context}
+        </div>
+      )}
     </div>
   );
 };
