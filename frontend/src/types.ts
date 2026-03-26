@@ -43,7 +43,7 @@ export interface ExtractedQuote {
   topics: string[];
 }
 
-export type SourceType = 'article' | 'youtube_transcript' | 'page_transcript' | 'press_statement';
+export type SourceType = 'article' | 'youtube_transcript' | 'page_transcript' | 'press_statement' | 'tweet' | 'bluesky_post' | 'facebook_post';
 
 export interface ExtractResponse {
   article: ArticleMetadata;

@@ -179,6 +179,76 @@ PRESS_STATEMENT_SYSTEM_PROMPT = (
     '"jurisdictions": string[], "topics": string[] }] }'
 )
 
+TWEET_SYSTEM_PROMPT = (
+    "You are extracting a statement about artificial intelligence from a single "
+    "tweet (post on X/Twitter). The tweet text IS the statement — there are no "
+    "quotation marks to look for. "
+    "The author's name and handle are provided above the tweet text. Use the "
+    "author name as speaker_name. If their role or title is evident from the "
+    "tweet or their handle (e.g. a known politician, agency, or think tank), "
+    "infer speaker_title; otherwise set it to null. "
+    "speaker_type must be one of: 'elected' (elected officials), 'staff' (government "
+    "or organizational staff), 'think_tank' (think tanks or research organizations), "
+    "or 'gov_inst' (government agencies or institutions). If the author does not fit "
+    "these categories, still extract the statement but use the closest matching type. "
+    "Treat the entire tweet as a single quotable statement. Only split into multiple "
+    "entries if the tweet clearly makes two unrelated points about AI. "
+    "Clean up the text for readability (e.g. expand common abbreviations if ambiguous) "
+    "but preserve the author's wording. Remove hashtags only if they are not part of "
+    "the substantive meaning. Preserve @-mentions. "
+    "For each quote, also assign jurisdiction tags describing the subject matter of "
+    "the statement (NOT the speaker's location or identity). Choose exclusively from "
+    "the canonical list provided in the user message below. When a specific US state is "
+    "relevant, tag both the state name and 'US-state'. When a specific US city or "
+    "county is relevant, tag both the locality name and 'US-local'. Only create a new "
+    "tag if absolutely nothing in the canonical list fits; never create synonyms of "
+    "existing tags. Return jurisdictions as an array of tag name strings. "
+    "For each quote, also assign topic tags describing what the quote is about. "
+    "Strongly prefer tags from the canonical topic list provided in the user message. "
+    "A quote may have more than one topic. Only create a new topic tag if absolutely "
+    "nothing in the canonical list fits; never create synonyms of existing tags. "
+    "Return topics as an array of tag name strings. "
+    "Return a JSON object only, no other "
+    'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
+    '"speaker_type": string, "quote_text": string, "context": string, '
+    '"jurisdictions": string[], "topics": string[] }] }'
+)
+
+SOCIAL_POST_SYSTEM_PROMPT = (
+    "You are extracting a statement about artificial intelligence from a single "
+    "social media post. The post text IS the statement — there are no "
+    "quotation marks to look for. "
+    "The author's name and handle are provided above the post text. Use the "
+    "author name as speaker_name. If their role or title is evident from the "
+    "post or their handle (e.g. a known politician, agency, or think tank), "
+    "infer speaker_title; otherwise set it to null. "
+    "speaker_type must be one of: 'elected' (elected officials), 'staff' (government "
+    "or organizational staff), 'think_tank' (think tanks or research organizations), "
+    "or 'gov_inst' (government agencies or institutions). If the author does not fit "
+    "these categories, still extract the statement but use the closest matching type. "
+    "Treat the entire post as a single quotable statement. Only split into multiple "
+    "entries if the post clearly makes two unrelated points about AI. "
+    "Clean up the text for readability (e.g. expand common abbreviations if ambiguous) "
+    "but preserve the author's wording. Remove hashtags only if they are not part of "
+    "the substantive meaning. Preserve @-mentions and handles. "
+    "For each quote, also assign jurisdiction tags describing the subject matter of "
+    "the statement (NOT the speaker's location or identity). Choose exclusively from "
+    "the canonical list provided in the user message below. When a specific US state is "
+    "relevant, tag both the state name and 'US-state'. When a specific US city or "
+    "county is relevant, tag both the locality name and 'US-local'. Only create a new "
+    "tag if absolutely nothing in the canonical list fits; never create synonyms of "
+    "existing tags. Return jurisdictions as an array of tag name strings. "
+    "For each quote, also assign topic tags describing what the quote is about. "
+    "Strongly prefer tags from the canonical topic list provided in the user message. "
+    "A quote may have more than one topic. Only create a new topic tag if absolutely "
+    "nothing in the canonical list fits; never create synonyms of existing tags. "
+    "Return topics as an array of tag name strings. "
+    "Return a JSON object only, no other "
+    'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
+    '"speaker_type": string, "quote_text": string, "context": string, '
+    '"jurisdictions": string[], "topics": string[] }] }'
+)
+
 SYSTEM_PROMPT = ARTICLE_SYSTEM_PROMPT
 
 
@@ -215,6 +285,21 @@ def extract_quotes(
         extract_instruction = (
             "Extract all notable AI-related statements from the following "
             "official document:"
+        )
+    elif source_type == "tweet":
+        system_prompt = TWEET_SYSTEM_PROMPT
+        extract_instruction = (
+            "Extract the AI-related statement from the following tweet:"
+        )
+    elif source_type == "bluesky_post":
+        system_prompt = SOCIAL_POST_SYSTEM_PROMPT
+        extract_instruction = (
+            "Extract the AI-related statement from the following Bluesky post:"
+        )
+    elif source_type == "facebook_post":
+        system_prompt = SOCIAL_POST_SYSTEM_PROMPT
+        extract_instruction = (
+            "Extract the AI-related statement from the following Facebook post:"
         )
     else:
         system_prompt = ARTICLE_SYSTEM_PROMPT

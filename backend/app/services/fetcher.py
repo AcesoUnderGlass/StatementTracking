@@ -296,10 +296,43 @@ def _is_youtube_url(url: str) -> bool:
     }
 
 
+def _is_twitter_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url.strip())
+        hostname = (parsed.hostname or "").lower()
+    except Exception:
+        return False
+    if hostname not in {
+        "twitter.com", "www.twitter.com", "mobile.twitter.com",
+        "x.com", "www.x.com",
+    }:
+        return False
+    return bool(re.match(r"^/[^/]+/status/\d+", parsed.path or ""))
+
+
+def _is_bluesky_url(url: str) -> bool:
+    from .bluesky_fetcher import is_bluesky_url
+    return is_bluesky_url(url)
+
+
+def _is_facebook_url(url: str) -> bool:
+    from .facebook_fetcher import is_facebook_url
+    return is_facebook_url(url)
+
+
 def fetch_article(url: str) -> dict:
     if _is_youtube_url(url):
         from .youtube_fetcher import fetch_youtube_transcript
         return fetch_youtube_transcript(url)
+    if _is_twitter_url(url):
+        from .twitter_fetcher import fetch_tweet
+        return fetch_tweet(url)
+    if _is_bluesky_url(url):
+        from .bluesky_fetcher import fetch_bluesky_post
+        return fetch_bluesky_post(url)
+    if _is_facebook_url(url):
+        from .facebook_fetcher import fetch_facebook_post
+        return fetch_facebook_post(url)
     if _is_pdf_url(url):
         return _fetch_pdf_article(url)
     return _fetch_html_article(url)
