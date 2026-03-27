@@ -1,7 +1,8 @@
-"""Local SQLite state tracker for seen URLs.
+"""Local SQLite state tracker for seen URLs and feed poll times.
 
 Prevents re-processing URLs across cron runs, avoiding wasted
-LLM extraction calls on already-queued articles.
+LLM extraction calls on already-queued articles. Also tracks
+per-feed last-poll timestamps for RSS polling.
 """
 from __future__ import annotations
 
@@ -28,6 +29,12 @@ def _ensure_db(db_path: str) -> sqlite3.Connection:
             first_seen_at  TEXT NOT NULL,
             submitted      INTEGER NOT NULL DEFAULT 0,
             submit_result  TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS feed_polls (
+            feed_url       TEXT PRIMARY KEY,
+            last_polled_at TEXT NOT NULL
         )
     """)
     conn.commit()
@@ -74,6 +81,26 @@ class StateTracker:
         ).fetchall()
         seen = {r[0] for r in rows}
         return [u for u in urls if u not in seen]
+
+    def get_last_poll(self, feed_url: str) -> datetime | None:
+        """Return the last poll timestamp for a feed, or None if never polled."""
+        row = self._conn.execute(
+            "SELECT last_polled_at FROM feed_polls WHERE feed_url = ?",
+            (feed_url,),
+        ).fetchone()
+        if row is None:
+            return None
+        return datetime.fromisoformat(row[0])
+
+    def set_last_poll(self, feed_url: str, poll_time: datetime) -> None:
+        """Record when a feed was last polled."""
+        self._conn.execute(
+            """INSERT INTO feed_polls (feed_url, last_polled_at)
+               VALUES (?, ?)
+               ON CONFLICT(feed_url) DO UPDATE SET last_polled_at = excluded.last_polled_at""",
+            (feed_url, poll_time.isoformat()),
+        )
+        self._conn.commit()
 
     def close(self) -> None:
         self._conn.close()

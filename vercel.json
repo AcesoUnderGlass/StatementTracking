@@ -4,10 +4,21 @@
   "functions": {
     "api/index.py": {
       "includeFiles": "backend/**"
+    },
+    "api/harvest.py": {
+      "includeFiles": "monitor/**",
+      "maxDuration": 300
     }
   },
   "rewrites": [
+    { "source": "/api/harvest", "destination": "/api/harvest" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/:path*", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/harvest",
+      "schedule": "*/30 * * * *"
+    }
   ]
 }

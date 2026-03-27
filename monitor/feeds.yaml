@@ -1,0 +1,51 @@
+# RSS feeds to poll for AI-policy-related articles.
+#
+# Each feed needs:
+#   name:        Human-readable label (used as ingestion_source_detail)
+#   url:         RSS/Atom feed URL
+#   source_type: "rss_feed" or "government_rss" (sets ingestion_source)
+
+feeds:
+  # --- Major policy / politics outlets ---
+  - name: Politico - Morning Tech
+    url: https://rss.politico.com/morningtech.xml
+    source_type: rss_feed
+
+  - name: Politico EU - Technology
+    url: https://www.politico.eu/section/technology/feed/
+    source_type: rss_feed
+
+  - name: The Hill - Technology
+    url: https://thehill.com/policy/technology/feed/
+    source_type: rss_feed
+
+  # --- Tech / AI-focused outlets ---
+  - name: Ars Technica - AI
+    url: https://feeds.arstechnica.com/arstechnica/technology-lab
+    source_type: rss_feed
+
+  - name: TechCrunch - AI
+    url: https://techcrunch.com/category/artificial-intelligence/feed/
+    source_type: rss_feed
+
+  # --- Google News topic searches (pre-filtered for AI policy) ---
+  - name: Google News - AI Policy
+    url: https://news.google.com/rss/search?q=%22artificial+intelligence%22+policy&hl=en-US&gl=US&ceid=US:en
+    source_type: rss_feed
+
+  - name: Google News - AI Regulation
+    url: https://news.google.com/rss/search?q=%22AI+regulation%22+OR+%22AI+legislation%22&hl=en-US&gl=US&ceid=US:en
+    source_type: rss_feed
+
+  # --- Government / institutional ---
+  - name: Congressional Record - AI
+    url: https://news.google.com/rss/search?q=%22artificial+intelligence%22+site%3Acongress.gov&hl=en-US&gl=US&ceid=US:en
+    source_type: government_rss
+
+  - name: Google News - Federal AI Policy
+    url: https://news.google.com/rss/search?q=%22artificial+intelligence%22+site%3Afederalregister.gov+OR+site%3Awhitehouse.gov&hl=en-US&gl=US&ceid=US:en
+    source_type: government_rss
+
+  - name: EU AI Act News
+    url: https://news.google.com/rss/search?q=%22EU+AI+Act%22+OR+%22European+AI%22+regulation&hl=en-US&gl=US&ceid=US:en
+    source_type: government_rss
