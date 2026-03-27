@@ -1,0 +1,22 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": null,
+  "installCommand": "pip install -r requirements.txt && cd frontend && npm install",
+  "functions": {
+    "api/harvest.py": {
+      "maxDuration": 300
+    }
+  },
+  "rewrites": [
+    { "source": "/api/harvest", "destination": "/api/harvest" },
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/harvest",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}
