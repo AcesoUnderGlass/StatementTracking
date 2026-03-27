@@ -136,6 +136,8 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
             publication=row.get("publication"),
             published_date=_parse_date(row.get("published_date")),
             fetched_at=_parse_date(row.get("fetched_at")),
+            ingestion_source=row.get("ingestion_source"),
+            ingestion_source_detail=row.get("ingestion_source_detail"),
         )
         db.add(a)
         articles_count += 1
@@ -154,6 +156,7 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
             date_recorded=_parse_date(row.get("date_recorded")),
             is_duplicate=row.get("is_duplicate", False),
             duplicate_of_id=row.get("duplicate_of_id"),
+            review_status=row.get("review_status", "approved"),
             created_at=_parse_date(row.get("created_at")),
         )
         db.add(q)

@@ -24,6 +24,7 @@ def _quote_to_dict(q: Quote) -> dict:
         "date_recorded": q.date_recorded.isoformat() if q.date_recorded else None,
         "is_duplicate": q.is_duplicate,
         "duplicate_of_id": q.duplicate_of_id,
+        "review_status": q.review_status or "approved",
         "created_at": q.created_at.isoformat() if q.created_at else None,
         "person": {
             "id": q.person.id,
@@ -82,6 +83,7 @@ def list_quotes(
     jurisdiction_ids: Optional[list[int]] = Query(None),
     topic_ids: Optional[list[int]] = Query(None),
     include_duplicates: bool = Query(False),
+    review_status: Optional[str] = Query("approved"),
     sort_by: Optional[str] = Query(None),
     sort_dir: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
@@ -94,6 +96,9 @@ def list_quotes(
 
     if not include_duplicates:
         base = base.filter(Quote.is_duplicate == False)  # noqa: E712
+
+    if review_status:
+        base = base.filter(Quote.review_status == review_status)
 
     if person_id:
         base = base.filter(Quote.person_id == person_id)
@@ -225,3 +230,37 @@ def delete_quote(quote_id: int, db: Session = Depends(get_db)):
     db.delete(quote)
     db.commit()
     return {"ok": True}
+
+
+@router.put("/{quote_id}/approve")
+def approve_quote(quote_id: int, db: Session = Depends(get_db)):
+    quote = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found.")
+    quote.review_status = "approved"
+    db.commit()
+    db.refresh(quote)
+    loaded = (
+        db.query(Quote)
+        .options(selectinload(Quote.person), selectinload(Quote.article))
+        .filter(Quote.id == quote_id)
+        .first()
+    )
+    return _quote_to_dict(loaded)
+
+
+@router.put("/{quote_id}/reject")
+def reject_quote(quote_id: int, db: Session = Depends(get_db)):
+    quote = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found.")
+    quote.review_status = "rejected"
+    db.commit()
+    db.refresh(quote)
+    loaded = (
+        db.query(Quote)
+        .options(selectinload(Quote.person), selectinload(Quote.article))
+        .filter(Quote.id == quote_id)
+        .first()
+    )
+    return _quote_to_dict(loaded)

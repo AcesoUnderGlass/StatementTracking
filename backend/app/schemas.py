@@ -47,6 +47,8 @@ class ArticleMetadata(BaseModel):
     publication: Optional[str] = None
     published_date: Optional[date] = None
     url: str
+    ingestion_source: Optional[str] = None
+    ingestion_source_detail: Optional[str] = None
 
 
 class ArticleOut(BaseModel):
@@ -57,6 +59,8 @@ class ArticleOut(BaseModel):
     publication: Optional[str] = None
     published_date: Optional[date] = None
     fetched_at: datetime
+    ingestion_source: Optional[str] = None
+    ingestion_source_detail: Optional[str] = None
 
 
 # ── Quotes ──────────────────────────────────────────────────────────────
@@ -96,6 +100,8 @@ class QuoteSaveItem(BaseModel):
 class SaveRequest(BaseModel):
     article: ArticleMetadata
     quotes: List[QuoteSaveItem]
+    ingestion_source: Optional[str] = None
+    ingestion_source_detail: Optional[str] = None
 
 
 class SaveResponse(BaseModel):
@@ -148,6 +154,7 @@ class QuoteOut(BaseModel):
     date_recorded: Optional[date] = None
     is_duplicate: bool = False
     duplicate_of_id: Optional[int] = None
+    review_status: str = "approved"
     created_at: datetime
     jurisdictions: List[str] = Field(default_factory=list)
     topics: List[str] = Field(default_factory=list)
@@ -222,3 +229,57 @@ class StatsResponse(BaseModel):
     quotes_by_party: List[PartyCount]
     quotes_over_time: List[MonthCount]
     top_speakers: List[TopSpeaker]
+
+
+# ── Auto-ingest ──────────────────────────────────────────────────────
+
+class AutoIngestRequest(BaseModel):
+    url: str
+    ingestion_source: str
+    ingestion_source_detail: Optional[str] = None
+
+
+class AutoIngestResult(BaseModel):
+    status: str
+    saved_count: int = 0
+    extracted_count: int = 0
+    error: Optional[str] = None
+    article: Optional[ArticleMetadata] = None
+
+
+# ── Review Queue ─────────────────────────────────────────────────────
+
+class PendingQuoteOut(BaseModel):
+    id: int
+    quote_text: str
+    context: Optional[str] = None
+    date_said: Optional[date] = None
+    date_recorded: Optional[date] = None
+    review_status: str = "pending"
+    created_at: datetime
+    jurisdictions: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
+    person: Optional[PersonBase] = None
+
+
+class PendingArticleOut(BaseModel):
+    id: int
+    url: str
+    title: Optional[str] = None
+    publication: Optional[str] = None
+    published_date: Optional[date] = None
+    fetched_at: datetime
+    ingestion_source: Optional[str] = None
+    ingestion_source_detail: Optional[str] = None
+    quotes: List[PendingQuoteOut] = Field(default_factory=list)
+
+
+class ReviewQueueResponse(BaseModel):
+    articles: List[PendingArticleOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class ReviewStatsResponse(BaseModel):
+    pending_count: int

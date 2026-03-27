@@ -33,6 +33,12 @@ class Chamber(str, enum.Enum):
     other = "Other"
 
 
+class ReviewStatus(str, enum.Enum):
+    approved = "approved"
+    pending = "pending"
+    rejected = "rejected"
+
+
 quote_jurisdictions = Table(
     "quote_jurisdictions",
     Base.metadata,
@@ -97,6 +103,12 @@ class Article(Base):
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now()
     )
+    ingestion_source: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True
+    )
+    ingestion_source_detail: Mapped[Optional[str]] = mapped_column(
+        String(512), nullable=True
+    )
 
     quotes: Mapped[List["Quote"]] = relationship(back_populates="article")
 
@@ -118,6 +130,9 @@ class Quote(Base):
     )
     duplicate_of_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("quotes.id"), nullable=True
+    )
+    review_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="approved"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now()
