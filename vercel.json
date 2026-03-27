@@ -4,12 +4,18 @@
   "framework": null,
   "installCommand": "cd frontend && npm install",
   "functions": {
-    "api/*.py": {
+    "api/index.py": {
       "runtime": "@vercel/python",
+      "includeFiles": "backend/**"
+    },
+    "api/harvest.py": {
+      "runtime": "@vercel/python",
+      "includeFiles": "monitor/**",
       "maxDuration": 300
     }
   },
   "rewrites": [
+    { "source": "/api/harvest", "destination": "/api/harvest" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/:path*", "destination": "/index.html" }
   ],
