@@ -48,7 +48,7 @@ function QuoteCard({
     mutationFn: () =>
       updateQuote(quote.id, {
         quote_text: editText,
-        context: editContext || null,
+        context: editContext || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['review-pending'] });
