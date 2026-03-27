@@ -10,7 +10,6 @@ interface Props {
 }
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
-//trigger deploy
 
 export const FILTER_BAR_NO_TOPICS_MESSAGE = 'No topics loaded.';
 
@@ -110,6 +109,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         <option value="staff">Staff</option>
         <option value="think_tank">Think Tank</option>
         <option value="gov_inst">Gov. Institution</option>
+        <option value="gov_inst">Non-Gov</option>
       </select>
 
       <details ref={jurRef} className="relative">
