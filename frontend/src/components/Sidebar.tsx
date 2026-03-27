@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 
 const links = [
+  { to: '/', label: 'Home', icon: '⌂' },
   { to: '/quotes', label: 'Quotes', icon: '❝' },
   { to: '/dashboard', label: 'Dashboard', icon: '▦' },
   { to: '/submit', label: 'Submit Article', icon: '＋' },

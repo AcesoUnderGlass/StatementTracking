@@ -1,5 +1,5 @@
 import FilterBarHome from '../../components/FilterBarHome';
-import EditorialCard from './EditorialCard';
+import EditorialCardTableVersion from './EditorialCardTableVersion';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
 
@@ -70,9 +70,9 @@ const EditorialView = ({
         </div>
       ) : (
         <>
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-12xl mx-auto">
             {data?.quotes.map((q, i) => (
-              <EditorialCard
+              <EditorialCardTableVersion
                 key={q.id}
                 quote={q}
                 index={i}
