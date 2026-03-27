@@ -7,7 +7,6 @@ interface Props {
   onChange: (filters: QuoteFilters) => void;
   jurisdictions: JurisdictionRow[];
   topics: TopicRow[];
-  // trying to figure vercel deploy
 }
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
