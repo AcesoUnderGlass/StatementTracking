@@ -1,15 +1,15 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
   "framework": null,
-  "installCommand": "pip install -r requirements.txt && cd frontend && npm install",
+  "installCommand": "cd frontend && npm install",
   "functions": {
-    "api/harvest.py": {
+    "api/*.py": {
+      "runtime": "@vercel/python",
       "maxDuration": 300
     }
   },
   "rewrites": [
-    { "source": "/api/harvest", "destination": "/api/harvest" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/:path*", "destination": "/index.html" }
   ],
