@@ -15,6 +15,8 @@ SYSTEM_PROMPT = (
     "Choose exclusively from the canonical list in the user message. "
     "When a specific US state is relevant, tag both the state name and 'US-state'. "
     "When a specific US city or county is relevant, tag both the locality name and 'US-local'. "
+    "IMPORTANT: 'US-local' is ONLY for US cities and counties. For non-US countries (e.g. China, "
+    "Japan, India, EU member states), use the country's canonical tag — never 'US-local'. "
     "Only create a new tag if absolutely nothing in the canonical list fits; never create synonyms of "
     "existing tags. "
     "If the quote discusses AI, AI risk, AI governance, or technology policy in any way, assign at least "

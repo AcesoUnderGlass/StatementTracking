@@ -42,7 +42,7 @@ def resolve_jurisdiction_ids(db: Session, names: Optional[Iterable[str]]) -> Lis
                 .first()
             )
         if not j:
-            j = Jurisdiction(name=name, abbreviation=None, category="local")
+            j = Jurisdiction(name=name, abbreviation=None, category="other")
             db.add(j)
             db.flush()
 
