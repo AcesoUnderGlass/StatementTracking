@@ -45,4 +45,5 @@ export interface QuoteItemProps {
   onDelete: () => void;
   onViewOriginal: (id: number) => void;
   onTagClick?: (category: FilterTagCategory, name: string) => void;
+  onDateClick?: (date: string) => void;
 }

@@ -45,6 +45,10 @@ const EditorialView = ({
     setFilters(addTag(filters, { category, value, label: name }));
   }, [filters, setFilters, jurisdictionOptions, topicOptions]);
 
+  const handleDateClick = useCallback((date: string) => {
+    setFilters({ ...filters, from_date: date, to_date: date, page: 1 });
+  }, [filters, setFilters]);
+
   return (
     <div
       className="-mx-12 -my-8 px-12 py-8 min-h-screen"
@@ -115,6 +119,7 @@ const EditorialView = ({
                 onDelete={() => onDelete(q.id)}
                 onViewOriginal={(id) => setExpanded(id)}
                 onTagClick={handleTagClick}
+                onDateClick={handleDateClick}
               />
             ))}
             {data?.quotes.length === 0 && (

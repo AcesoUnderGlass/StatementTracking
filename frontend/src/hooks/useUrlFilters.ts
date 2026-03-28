@@ -6,6 +6,7 @@ const STRING_KEYS = [
   'search', 'party', 'type',
   'from_date', 'to_date',
   'added_from_date', 'added_to_date',
+  'person_name', 'article_title',
 ] as const;
 
 const NUMBER_KEYS = ['person_id', 'page', 'page_size'] as const;

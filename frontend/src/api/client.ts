@@ -79,6 +79,8 @@ export function updatePerson(
 
 export interface QuoteFilters {
   person_id?: number;
+  person_name?: string;
+  article_title?: string;
   search?: string;
   party?: string;
   type?: string;

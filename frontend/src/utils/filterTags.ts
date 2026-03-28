@@ -13,6 +13,8 @@ const CATEGORY_LABELS: Record<FilterTagCategory, string> = {
   type: 'Type',
   jurisdiction: 'Jurisdiction',
   topic: 'Topic',
+  person: 'Person',
+  source: 'Source',
 };
 
 export function filtersToTags(
@@ -35,6 +37,12 @@ export function filtersToTags(
     const row = topics.find((t) => t.id === id);
     tags.push({ category: 'topic', value: String(id), label: row?.name ?? `Topic #${id}` });
   }
+  if (filters.person_name) {
+    tags.push({ category: 'person', value: filters.person_name, label: filters.person_name });
+  }
+  if (filters.article_title) {
+    tags.push({ category: 'source', value: filters.article_title, label: filters.article_title });
+  }
   return tags;
 }
 
@@ -52,6 +60,10 @@ export function removeTag(filters: QuoteFilters, tag: FilterTag): QuoteFilters {
       const next = (filters.topic_ids ?? []).filter((id) => id !== Number(tag.value));
       return { ...filters, topic_ids: next.length ? next : undefined, page: 1 };
     }
+    case 'person':
+      return { ...filters, person_name: undefined, page: 1 };
+    case 'source':
+      return { ...filters, article_title: undefined, page: 1 };
   }
 }
 
@@ -73,6 +85,10 @@ export function addTag(filters: QuoteFilters, tag: FilterTag): QuoteFilters {
       if (cur.includes(id)) return filters;
       return { ...filters, topic_ids: [...cur, id], page: 1 };
     }
+    case 'person':
+      return { ...filters, person_name: tag.value, page: 1 };
+    case 'source':
+      return { ...filters, article_title: tag.value, page: 1 };
   }
 }
 
@@ -126,5 +142,9 @@ export function tagPillStyle(tag: FilterTag): { background: string; color: strin
       return { background: '#e5eef5', color: '#2a5080', border: '1px solid #c8d5e5' };
     case 'topic':
       return { background: '#efe5f5', color: '#6b2fa0', border: '1px solid #d8c8e5' };
+    case 'person':
+      return { background: '#fef3e2', color: '#7c4a03', border: '1px solid #f0d8a8' };
+    case 'source':
+      return { background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9' };
   }
 }

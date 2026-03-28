@@ -122,6 +122,8 @@ SORT_COLUMNS = {
 @router.get("")
 def list_quotes(
     person_id: Optional[int] = None,
+    person_name: Optional[str] = None,
+    article_title: Optional[str] = None,
     search: Optional[str] = None,
     party: Optional[str] = None,
     type: Optional[str] = None,
@@ -151,6 +153,13 @@ def list_quotes(
 
     if person_id:
         base = base.filter(Quote.person_id == person_id)
+    if person_name:
+        if not joined_person:
+            base = base.join(Person)
+            joined_person = True
+        base = base.filter(Person.name == person_name)
+    if article_title:
+        base = base.join(Article).filter(Article.title == article_title)
     if search:
         base = base.filter(Quote.quote_text.ilike(f"%{search}%"))
     if party:

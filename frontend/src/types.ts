@@ -237,7 +237,7 @@ export interface SuggestTagsResponse {
   topics: string[];
 }
 
-export type FilterTagCategory = 'party' | 'type' | 'jurisdiction' | 'topic';
+export type FilterTagCategory = 'party' | 'type' | 'jurisdiction' | 'topic' | 'person' | 'source';
 export interface FilterTag {
   category: FilterTagCategory;
   value: string;

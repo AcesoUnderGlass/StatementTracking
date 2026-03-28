@@ -89,9 +89,35 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
           </button>
         </div>
 
-        <div className="flex-1 flex justify-center px-2">
+        <div className="flex-1 flex justify-end px-2">
           <FilterTagPills tags={activeTags} onRemove={(tag) => onChange(removeTag(filters, tag))} />
         </div>
+
+        {!showAdvanced && (filters.from_date || filters.to_date) && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1">
+            <input
+              type="date"
+              value={filters.from_date || ''}
+              onChange={(e) => update('from_date', e.target.value)}
+              className="px-2 py-1 border border-blue-200 rounded text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Date spoken — from"
+            />
+            <span className="text-blue-300 text-xs">–</span>
+            <input
+              type="date"
+              value={filters.to_date || ''}
+              onChange={(e) => update('to_date', e.target.value)}
+              className="px-2 py-1 border border-blue-200 rounded text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Date spoken — to"
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...filters, from_date: undefined, to_date: undefined, page: 1 })}
+              className="text-slate-400 hover:text-slate-600 text-xs leading-none"
+              title="Clear date filter"
+            >×</button>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <FilterSearchDropdown

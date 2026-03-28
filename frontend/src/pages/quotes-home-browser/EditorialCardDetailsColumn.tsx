@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link2, Pencil } from 'lucide-react';
 import { fetchQuote } from '../../api/client';
-import type { QuoteWithDetails } from '../../types';
+import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 
 const EditorialCardDetailsColumn = ({
   quote,
@@ -10,6 +10,7 @@ const EditorialCardDetailsColumn = ({
   onStartEdit,
   onCancelEdit,
   onViewOriginal,
+  onTagClick,
 }:{
   quote: QuoteWithDetails;
   isSortingByAddedDate: boolean;
@@ -17,6 +18,7 @@ const EditorialCardDetailsColumn = ({
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onViewOriginal: (id: number) => void;
+  onTagClick?: (category: FilterTagCategory, name: string) => void;
 }) => {
   const articleDomain = quote.article?.url
     ? (() => {
@@ -36,7 +38,10 @@ const EditorialCardDetailsColumn = ({
   return (
     <div className="py-1 flex flex-col justify-center px-3 py-4 md:pl-0 md:pr-6 relative bg-white">
       {quote.article?.title && (
-        <p className="mt-3 mb-2 text-xs text-black font-semibold leading-tight">
+        <p
+          className="mt-3 mb-2 text-xs text-black font-semibold leading-tight cursor-pointer hover:underline"
+          onClick={(e) => { e.stopPropagation(); onTagClick?.('source', quote.article!.title!); }}
+        >
           {quote.article.title}
         </p>
       )}
