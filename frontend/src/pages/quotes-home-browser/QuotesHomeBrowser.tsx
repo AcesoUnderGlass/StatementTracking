@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   fetchQuotes,
   fetchJurisdictions,
@@ -13,11 +13,14 @@ import type { QuoteWithDetails } from '../../types';
 import EditorialView from './EditorialView';
 import type { EditFormState, ViewProps } from './types';
 
-const HOME_DEFAULTS: QuoteFilters = { page: 1, page_size: 50, sort_by: 'date_said', sort_dir: 'desc' };
+const INITIAL_PAGE_SIZE = 10;
+const FULL_PAGE_SIZE = 50;
+const HOME_DEFAULTS: QuoteFilters = { page: 1, page_size: FULL_PAGE_SIZE, sort_by: 'date_said', sort_dir: 'desc' };
 
 const QuotesHomeBrowser = () => {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useUrlFilters(HOME_DEFAULTS);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({
@@ -28,10 +31,22 @@ const QuotesHomeBrowser = () => {
     topic_names: [],
   });
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['quotes', filters],
-    queryFn: () => fetchQuotes(filters),
+  const isFirstPage = filters.page === 1;
+  const effectiveFilters: QuoteFilters = (!initialLoaded && isFirstPage)
+    ? { ...filters, page_size: INITIAL_PAGE_SIZE }
+    : filters;
+
+  const { data, isLoading, error, isFetched } = useQuery({
+    queryKey: ['quotes', effectiveFilters],
+    queryFn: () => fetchQuotes(effectiveFilters),
+    placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (isFetched && !initialLoaded && isFirstPage) {
+      setInitialLoaded(true);
+    }
+  }, [isFetched, initialLoaded, isFirstPage]);
 
   const { data: jurisdictionOptions = [] } = useQuery({
     queryKey: ['jurisdictions'],
@@ -90,7 +105,7 @@ const QuotesHomeBrowser = () => {
     });
   }
 
-  const totalPages = data ? Math.ceil(data.total / (filters.page_size || 50)) : 0;
+  const totalPages = data ? Math.ceil(data.total / FULL_PAGE_SIZE) : 0;
 
   const viewProps: ViewProps = {
     filters,
