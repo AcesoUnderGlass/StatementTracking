@@ -262,3 +262,51 @@ export async function importDatabase(file: File): Promise<{ ok: boolean; importe
 export function clearDatabase(): Promise<{ ok: boolean; deleted: { people: number; articles: number; quotes: number } }> {
   return request('/admin/clear', { method: 'POST' });
 }
+
+// ── Feed Harvest ────────────────────────────────────────────────────
+
+export interface HarvestCandidate {
+  url: string;
+  title: string;
+  published_date: string | null;
+}
+
+export interface HarvestFeedResponse {
+  candidates: HarvestCandidate[];
+  total_entries: number;
+  feed_title: string | null;
+}
+
+export interface AutoIngestResult {
+  status: string;
+  saved_count: number;
+  extracted_count: number;
+  error?: string;
+  article?: ArticleMetadata | null;
+}
+
+export function harvestFeed(
+  feedUrl: string,
+  startDate: string,
+  endDate: string,
+): Promise<HarvestFeedResponse> {
+  return request('/articles/harvest-feed', {
+    method: 'POST',
+    body: JSON.stringify({ feed_url: feedUrl, start_date: startDate, end_date: endDate }),
+  });
+}
+
+export function autoIngestUrl(
+  url: string,
+  ingestionSource: string,
+  ingestionSourceDetail?: string,
+): Promise<AutoIngestResult> {
+  return request('/articles/auto-ingest', {
+    method: 'POST',
+    body: JSON.stringify({
+      url,
+      ingestion_source: ingestionSource,
+      ingestion_source_detail: ingestionSourceDetail,
+    }),
+  });
+}

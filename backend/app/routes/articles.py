@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import difflib
 import logging
-from datetime import date
+from calendar import timegm
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction, Topic
+import feedparser
+
 from ..schemas import (
     ExtractRequest,
     ExtractResponse,
@@ -23,6 +26,9 @@ from ..schemas import (
     CheckUrlsResponse,
     AutoIngestRequest,
     AutoIngestResult,
+    HarvestFeedRequest,
+    HarvestCandidate,
+    HarvestFeedResponse,
 )
 from ..services.fetcher import fetch_article, FetchError
 from ..services.extractor import extract_quotes, ExtractionError
@@ -452,6 +458,55 @@ def auto_ingest(req: AutoIngestRequest, db: Session = Depends(get_db)):
         saved_count=saved,
         extracted_count=len(extracted),
         article=article_meta,
+    )
+
+
+# ── Feed Harvest (scan RSS for date range) ───────────────────────────
+
+def _entry_published_date(entry) -> date | None:
+    """Extract a UTC date from a feedparser entry's timestamp fields."""
+    for attr in ("published_parsed", "updated_parsed"):
+        tp = getattr(entry, attr, None)
+        if tp is not None:
+            dt = datetime.fromtimestamp(timegm(tp), tz=timezone.utc)
+            return dt.date()
+    return None
+
+
+@router.post("/harvest-feed", response_model=HarvestFeedResponse)
+def harvest_feed(req: HarvestFeedRequest):
+    """Parse an RSS feed and return entries whose publication date falls
+    within [start_date, end_date].  Does NOT update any poll watermarks."""
+
+    parsed = feedparser.parse(req.feed_url)
+
+    if parsed.bozo and not parsed.entries:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Could not parse feed: {parsed.bozo_exception}",
+        )
+
+    feed_title = getattr(parsed.feed, "title", None)
+    total_entries = len(parsed.entries)
+    candidates: list[HarvestCandidate] = []
+
+    for entry in parsed.entries:
+        pub = _entry_published_date(entry)
+
+        if pub is not None and (pub < req.start_date or pub > req.end_date):
+            continue
+
+        link = entry.get("link", "")
+        if not link:
+            continue
+
+        title = entry.get("title", "")
+        candidates.append(HarvestCandidate(url=link, title=title, published_date=pub))
+
+    return HarvestFeedResponse(
+        candidates=candidates,
+        total_entries=total_entries,
+        feed_title=feed_title,
     )
 
 

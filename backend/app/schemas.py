@@ -283,3 +283,23 @@ class ReviewQueueResponse(BaseModel):
 
 class ReviewStatsResponse(BaseModel):
     pending_count: int
+
+
+# ── Feed Harvest ─────────────────────────────────────────────────────
+
+class HarvestFeedRequest(BaseModel):
+    feed_url: str
+    start_date: date
+    end_date: date
+
+
+class HarvestCandidate(BaseModel):
+    url: str
+    title: str
+    published_date: Optional[date] = None
+
+
+class HarvestFeedResponse(BaseModel):
+    candidates: List[HarvestCandidate]
+    total_entries: int
+    feed_title: Optional[str] = None

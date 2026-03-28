@@ -10,6 +10,7 @@ import PersonProfile from './pages/PersonProfile';
 import Admin from './pages/Admin';
 import BulkSubmit from './pages/BulkSubmit';
 import ReviewQueue from './pages/ReviewQueue';
+import FeedHarvest from './pages/FeedHarvest';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/people" element={<People />} />
             <Route path="/people/:id" element={<PersonProfile />} />
             <Route path="/bulk-submit" element={<BulkSubmit />} />
+            <Route path="/feed-harvest" element={<FeedHarvest />} />
             <Route path="/review" element={<ReviewQueue />} />
             <Route path="/admin" element={<Admin />} />
           </Route>

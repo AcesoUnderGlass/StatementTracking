@@ -8,6 +8,7 @@ const links = [
   { to: '/dashboard', label: 'Dashboard', icon: '▦' },
   { to: '/submit', label: 'Submit Article', icon: '＋' },
   { to: '/bulk-submit', label: 'Bulk Submit', icon: '⇈' },
+  { to: '/feed-harvest', label: 'Feed Harvest', icon: '⊞' },
   { to: '/review', label: 'Review Queue', icon: '⊘', showBadge: true },
   { to: '/people', label: 'Speakers', icon: '◉' },
   { to: '/admin', label: 'Admin', icon: '⚙' },
