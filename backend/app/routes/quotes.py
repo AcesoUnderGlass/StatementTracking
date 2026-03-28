@@ -163,8 +163,10 @@ def list_quotes(
     if search:
         base = base.filter(Quote.quote_text.ilike(f"%{search}%"))
     if party:
-        base = base.join(Person).filter(Person.party == party)
-        joined_person = True
+        if not joined_person:
+            base = base.join(Person)
+            joined_person = True
+        base = base.filter(Person.party == party)
     if type:
         if not joined_person:
             base = base.join(Person)
