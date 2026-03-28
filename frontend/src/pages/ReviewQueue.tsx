@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchPendingReview,
@@ -8,8 +8,12 @@ import {
   approveAllArticleQuotes,
   rejectAllArticleQuotes,
   updateQuote,
+  addQuoteToArticle,
+  fetchJurisdictions,
+  fetchTopics,
 } from '../api/client';
-import type { PendingArticle, PendingQuote } from '../types';
+import type { PendingArticle, PendingQuote, PersonCreate } from '../types';
+import SharedQuoteCard, { type QuoteCardData } from '../components/QuoteCard';
 
 const SOURCE_LABELS: Record<string, string> = {
   rss_feed: 'RSS Feed',
@@ -163,9 +167,52 @@ function QuoteCard({
   );
 }
 
+function blankQuoteCard(): QuoteCardData {
+  return {
+    speaker_name: '',
+    speaker_title: null,
+    speaker_type: 'elected',
+    quote_text: '',
+    context: null,
+    jurisdiction_names: [],
+    topic_names: [],
+    approved: true,
+    person_id: null,
+    new_person: null,
+    duplicate_match: null,
+    mark_as_duplicate: false,
+  };
+}
+
+function collectPendingSpeakers(quotes: QuoteCardData[]): PersonCreate[] {
+  const map = new Map<string, PersonCreate>();
+  for (const q of quotes) {
+    if (q.new_person) {
+      const key = q.new_person.name.trim().toLowerCase();
+      if (!map.has(key)) map.set(key, q.new_person);
+    }
+  }
+  return [...map.values()];
+}
+
 function ArticleCard({ article }: { article: PendingArticle }) {
   const [expanded, setExpanded] = useState(true);
+  const [addingQuotes, setAddingQuotes] = useState<QuoteCardData[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
+
+  const { data: jurisdictionOptions = [] } = useQuery({
+    queryKey: ['jurisdictions'],
+    queryFn: fetchJurisdictions,
+  });
+
+  const { data: topicOptions = [] } = useQuery({
+    queryKey: ['topics'],
+    queryFn: fetchTopics,
+  });
+
+  const pendingSpeakers = useMemo(() => collectPendingSpeakers(addingQuotes), [addingQuotes]);
 
   const approveOne = useMutation({
     mutationFn: approveQuote,
@@ -200,6 +247,48 @@ function ArticleCard({ article }: { article: PendingArticle }) {
   });
 
   const isActioning = approveOne.isPending || rejectOne.isPending || approveAll.isPending || rejectAll.isPending;
+
+  function handleAddQuoteChange(index: number, updated: Partial<QuoteCardData>) {
+    setAddingQuotes((prev) => prev.map((q, i) => (i === index ? { ...q, ...updated } : q)));
+  }
+
+  function handleAddQuoteDelete(index: number) {
+    setAddingQuotes((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleSaveNewQuotes() {
+    const toSave = addingQuotes.filter((q) => q.quote_text.trim());
+    if (toSave.length === 0) return;
+
+    const missing = toSave.filter((q) => !q.person_id && !q.new_person);
+    if (missing.length > 0) {
+      setSaveError(`${missing.length} quote(s) have no speaker assigned.`);
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      for (const q of toSave) {
+        await addQuoteToArticle(article.id, {
+          quote_text: q.quote_text,
+          context: q.context,
+          date_said: article.published_date,
+          person_id: q.person_id,
+          new_person: q.new_person,
+          jurisdiction_names: q.jurisdiction_names.length ? q.jurisdiction_names : null,
+          topic_names: q.topic_names.length ? q.topic_names : null,
+        });
+      }
+      setAddingQuotes([]);
+      queryClient.invalidateQueries({ queryKey: ['review-pending'] });
+    } catch (err: any) {
+      setSaveError(err.message || 'Failed to save quote.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -264,6 +353,52 @@ function ArticleCard({ article }: { article: PendingArticle }) {
               isActioning={isActioning}
             />
           ))}
+
+          {addingQuotes.length > 0 && (
+            <>
+              <div className="border-t border-slate-200 pt-3 mt-3">
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  New Quotes
+                </h4>
+              </div>
+              {addingQuotes.map((q, i) => (
+                <SharedQuoteCard
+                  key={`new-${i}`}
+                  data={q}
+                  index={i}
+                  pendingSpeakers={pendingSpeakers}
+                  jurisdictionOptions={jurisdictionOptions}
+                  topicOptions={topicOptions}
+                  articleContext={{ title: article.title, url: article.url }}
+                  onChange={handleAddQuoteChange}
+                  onDelete={handleAddQuoteDelete}
+                />
+              ))}
+              {saveError && (
+                <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs">
+                  {saveError}
+                </div>
+              )}
+              <button
+                onClick={handleSaveNewQuotes}
+                disabled={saving || addingQuotes.every((q) => !q.quote_text.trim())}
+                className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? 'Saving...' : `Save ${addingQuotes.filter((q) => q.quote_text.trim()).length} New Quote${addingQuotes.filter((q) => q.quote_text.trim()).length !== 1 ? 's' : ''}`}
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setAddingQuotes((prev) => [...prev, blankQuoteCard()])}
+            className="w-full py-2.5 border-2 border-dashed border-slate-300 rounded-xl text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-colors flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add Quote
+          </button>
         </div>
       )}
     </div>

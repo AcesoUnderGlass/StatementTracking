@@ -15,6 +15,9 @@ import type {
   TopicRow,
   ReviewQueueResponse,
   ReviewStats,
+  SuggestTagsRequest,
+  SuggestTagsResponse,
+  AddQuoteRequest,
 } from '../types';
 
 const BASE = '/api';
@@ -308,5 +311,26 @@ export function autoIngestUrl(
       ingestion_source: ingestionSource,
       ingestion_source_detail: ingestionSourceDetail,
     }),
+  });
+}
+
+// ── Suggest Tags ────────────────────────────────────────────────────
+
+export function suggestTags(data: SuggestTagsRequest): Promise<SuggestTagsResponse> {
+  return request('/quotes/suggest-tags', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ── Add Quote to Article ────────────────────────────────────────────
+
+export function addQuoteToArticle(
+  articleId: number,
+  data: AddQuoteRequest,
+): Promise<{ ok: boolean; quote_id: number }> {
+  return request(`/articles/${articleId}/add-quote`, {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 }

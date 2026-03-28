@@ -414,6 +414,7 @@ export default function SubmitArticle() {
                 pendingSpeakers={pendingSpeakers}
                 jurisdictionOptions={jurisdictionOptions}
                 topicOptions={topicOptions}
+                articleContext={article ? { title: article.title, url: article.url } : undefined}
                 onChange={handleQuoteChange}
                 onDelete={handleQuoteDelete}
               />

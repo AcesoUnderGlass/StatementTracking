@@ -29,6 +29,7 @@ from ..schemas import (
     HarvestFeedRequest,
     HarvestCandidate,
     HarvestFeedResponse,
+    AddQuoteRequest,
 )
 from ..services.fetcher import fetch_article, FetchError
 from ..services.extractor import extract_quotes, ExtractionError
@@ -538,3 +539,64 @@ def reject_all_quotes(article_id: int, db: Session = Depends(get_db)):
     )
     db.commit()
     return {"ok": True, "rejected_count": count}
+
+
+# ── Add quote to existing article ────────────────────────────────────
+
+@router.post("/{article_id}/add-quote")
+def add_quote_to_article(
+    article_id: int,
+    req: AddQuoteRequest,
+    db: Session = Depends(get_db),
+):
+    """Add a single quote to an existing article."""
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found.")
+
+    if not req.person_id and not req.new_person:
+        raise HTTPException(
+            status_code=400,
+            detail="Either person_id or new_person is required.",
+        )
+
+    if req.person_id:
+        person_id = req.person_id
+    else:
+        name_key = req.new_person.name.strip().lower()
+        existing_person = db.query(Person).filter(
+            Person.name.ilike(name_key)
+        ).first()
+        if existing_person:
+            person_id = existing_person.id
+        else:
+            person = Person(
+                name=req.new_person.name,
+                type=SpeakerType(req.new_person.type),
+                party=Party(req.new_person.party) if req.new_person.party else None,
+                role=req.new_person.role,
+                chamber=Chamber(req.new_person.chamber) if req.new_person.chamber else None,
+                state=req.new_person.state,
+                employer=req.new_person.employer,
+                notes=req.new_person.notes,
+            )
+            db.add(person)
+            db.flush()
+            person_id = person.id
+
+    quote = Quote(
+        person_id=person_id,
+        article_id=article.id,
+        quote_text=req.quote_text,
+        context=req.context,
+        date_said=req.date_said,
+        date_recorded=date.today(),
+        review_status="approved",
+    )
+    db.add(quote)
+    db.flush()
+    set_quote_jurisdictions(db, quote, req.jurisdiction_names)
+    set_quote_topics(db, quote, req.topic_names)
+    db.commit()
+
+    return {"ok": True, "quote_id": quote.id}

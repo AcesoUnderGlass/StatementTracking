@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import PersonTypeahead from './PersonTypeahead';
 import TagSelect from './TagSelect';
+import { suggestTags } from '../api/client';
 import type { PersonCreate, SpeakerType, ExistingQuoteMatch, JurisdictionRow, TopicRow } from '../types';
 
 export interface QuoteCardData {
@@ -17,6 +19,11 @@ export interface QuoteCardData {
   mark_as_duplicate: boolean;
 }
 
+export interface ArticleContext {
+  title?: string | null;
+  url?: string | null;
+}
+
 interface Props {
   data: QuoteCardData;
   index: number;
@@ -24,6 +31,7 @@ interface Props {
   pendingSpeakers?: PersonCreate[];
   jurisdictionOptions?: JurisdictionRow[];
   topicOptions?: TopicRow[];
+  articleContext?: ArticleContext;
   onChange: (index: number, updated: Partial<QuoteCardData>) => void;
   onDelete: (index: number) => void;
 }
@@ -34,10 +42,34 @@ export default function QuoteCard({
   pendingSpeakers = [],
   jurisdictionOptions = [],
   topicOptions = [],
+  articleContext,
   onChange,
   onDelete,
 }: Props) {
   const isDup = !!data.duplicate_match;
+  const [inferring, setInferring] = useState(false);
+
+  async function handleSuggestTags() {
+    if (!data.quote_text.trim()) return;
+    setInferring(true);
+    try {
+      const result = await suggestTags({
+        quote_text: data.quote_text,
+        context: data.context,
+        speaker_name: data.new_person?.name || data.speaker_name || undefined,
+        article_title: articleContext?.title,
+        article_url: articleContext?.url,
+      });
+      onChange(index, {
+        jurisdiction_names: result.jurisdictions,
+        topic_names: result.topics,
+      });
+    } catch {
+      // non-critical
+    } finally {
+      setInferring(false);
+    }
+  }
 
   return (
     <div
@@ -215,6 +247,26 @@ export default function QuoteCard({
             rows={2}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
           />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSuggestTags}
+            disabled={inferring || !data.quote_text.trim()}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors bg-violet-100 text-violet-700 hover:bg-violet-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+          >
+            {inferring && (
+              <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            )}
+            {inferring ? 'Inferring...' : 'Suggest Tags'}
+          </button>
+          {data.jurisdiction_names.length === 0 && data.topic_names.length === 0 && data.quote_text.trim() && (
+            <span className="text-xs text-slate-400">Click to auto-populate tags from quote text</span>
+          )}
         </div>
 
         <div>

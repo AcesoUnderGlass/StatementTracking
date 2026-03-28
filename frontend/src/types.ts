@@ -218,3 +218,26 @@ export interface ReviewQueueResponse {
 export interface ReviewStats {
   pending_count: number;
 }
+
+export interface SuggestTagsRequest {
+  quote_text: string;
+  context?: string | null;
+  speaker_name?: string | null;
+  article_title?: string | null;
+  article_url?: string | null;
+}
+
+export interface SuggestTagsResponse {
+  jurisdictions: string[];
+  topics: string[];
+}
+
+export interface AddQuoteRequest {
+  quote_text: string;
+  context?: string | null;
+  date_said?: string | null;
+  person_id?: number | null;
+  new_person?: PersonCreate | null;
+  jurisdiction_names?: string[] | null;
+  topic_names?: string[] | null;
+}

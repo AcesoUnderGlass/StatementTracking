@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from typing import Optional
 
@@ -6,11 +7,15 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
-from ..models import Quote, Person, Article, quote_jurisdictions, quote_topics
-from ..schemas import QuoteUpdate, DuplicateCheckRequest
+from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics
+from ..schemas import QuoteUpdate, DuplicateCheckRequest, SuggestTagsRequest, SuggestTagsResponse
 from ..services.dedup import check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
 from ..services.topic_quote import set_quote_topics
+from ..services.topic_tagger import infer_topic_tags, TopicTagError
+from ..services.jurisdiction_tagger import infer_jurisdiction_tags, JurisdictionTagError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 
@@ -61,6 +66,49 @@ def check_duplicates(
         db, [item.model_dump() for item in req.items]
     )
     return {"results": results}
+
+
+@router.post("/suggest-tags", response_model=SuggestTagsResponse)
+def suggest_tags(req: SuggestTagsRequest, db: Session = Depends(get_db)):
+    """Infer jurisdiction and topic tags for a quote using the same Claude
+    tagger services used during extraction."""
+    jurisdiction_rows = db.query(Jurisdiction).order_by(Jurisdiction.name).all()
+    jurisdiction_block = "\n".join(
+        f"- {r.name}" + (f" (abbreviation: {r.abbreviation})" if r.abbreviation else "")
+        for r in jurisdiction_rows
+    ) or "(No jurisdictions seeded.)"
+
+    topic_rows = db.query(Topic).order_by(Topic.name).all()
+    topic_block = "\n".join(f"- {r.name}" for r in topic_rows) or "(No topics seeded.)"
+
+    jurisdictions: list[str] = []
+    topics: list[str] = []
+
+    try:
+        jurisdictions = infer_jurisdiction_tags(
+            canonical_jurisdiction_block=jurisdiction_block,
+            quote_text=req.quote_text,
+            context=req.context,
+            speaker_name=req.speaker_name or "Unknown",
+            article_title=req.article_title,
+            article_url=req.article_url,
+        )
+    except JurisdictionTagError as e:
+        logger.warning("Jurisdiction tag inference failed: %s", e)
+
+    try:
+        topics = infer_topic_tags(
+            canonical_topic_block=topic_block,
+            quote_text=req.quote_text,
+            context=req.context,
+            speaker_name=req.speaker_name or "Unknown",
+            article_title=req.article_title,
+            article_url=req.article_url,
+        )
+    except TopicTagError as e:
+        logger.warning("Topic tag inference failed: %s", e)
+
+    return SuggestTagsResponse(jurisdictions=jurisdictions, topics=topics)
 
 
 SORT_COLUMNS = {

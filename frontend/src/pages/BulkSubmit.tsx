@@ -303,10 +303,37 @@ function ReviewPanel({
             pendingSpeakers={pendingSpeakers}
             jurisdictionOptions={jurisdictionOptions}
             topicOptions={topicOptions}
+            articleContext={article ? { title: article.title, url: article.url } : undefined}
             onChange={handleChange}
             onDelete={handleDelete}
           />
         ))}
+      </div>
+
+      <div className="flex gap-3 mb-4">
+        <button
+          type="button"
+          onClick={() => setQuotes((prev) => [...prev, {
+            speaker_name: '',
+            speaker_title: null,
+            speaker_type: 'elected',
+            quote_text: '',
+            context: null,
+            jurisdiction_names: [],
+            topic_names: [],
+            approved: true,
+            person_id: null,
+            new_person: null,
+            duplicate_match: null,
+            mark_as_duplicate: false,
+          }])}
+          className="flex-1 py-2.5 border-2 border-dashed border-slate-300 rounded-xl text-sm font-medium text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-colors flex items-center justify-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Add Quote
+        </button>
       </div>
 
       {quotes.length > 0 && (
@@ -615,14 +642,25 @@ export default function BulkSubmit() {
                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
                   File Summary
                 </h3>
-                <span className="text-sm text-slate-600 font-medium">
-                  {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-                  {existingUrls.size > 0 && (
-                    <span className="text-slate-400 ml-1">
-                      ({newEntries.length} new)
-                    </span>
-                  )}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-600 font-medium">
+                    {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+                    {existingUrls.size > 0 && (
+                      <span className="text-slate-400 ml-1">
+                        ({newEntries.length} new)
+                      </span>
+                    )}
+                  </span>
+                  <button
+                    onClick={reset}
+                    className="px-3 py-1 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-md transition-colors flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4 text-sm mb-4">
                 <div className="bg-slate-50 rounded-lg p-3">
@@ -663,25 +701,17 @@ export default function BulkSubmit() {
                 </div>
               )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={processAll}
-                  disabled={checkingUrls || newEntries.length === 0}
-                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {checkingUrls
-                    ? 'Checking URLs...'
-                    : newEntries.length === 0
-                      ? 'All URLs already imported'
-                      : `Start Processing (${newEntries.length})`}
-                </button>
-                <button
-                  onClick={reset}
-                  className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
+              <button
+                onClick={processAll}
+                disabled={checkingUrls || newEntries.length === 0}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {checkingUrls
+                  ? 'Checking URLs...'
+                  : newEntries.length === 0
+                    ? 'All URLs already imported'
+                    : `Start Processing (${newEntries.length})`}
+              </button>
             </div>
           )}
         </>
@@ -778,9 +808,12 @@ export default function BulkSubmit() {
                 )}
                 <button
                   onClick={reset}
-                  className="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                  className="px-5 py-2 border border-slate-300 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                 >
-                  New Batch
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear
                 </button>
               </div>
             )}

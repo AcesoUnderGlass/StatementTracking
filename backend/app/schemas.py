@@ -285,6 +285,33 @@ class ReviewStatsResponse(BaseModel):
     pending_count: int
 
 
+# ── Suggest Tags ─────────────────────────────────────────────────────
+
+class SuggestTagsRequest(BaseModel):
+    quote_text: str
+    context: Optional[str] = None
+    speaker_name: Optional[str] = None
+    article_title: Optional[str] = None
+    article_url: Optional[str] = None
+
+
+class SuggestTagsResponse(BaseModel):
+    jurisdictions: List[str]
+    topics: List[str]
+
+
+# ── Add Quote to Article ─────────────────────────────────────────────
+
+class AddQuoteRequest(BaseModel):
+    quote_text: str
+    context: Optional[str] = None
+    date_said: Optional[date] = None
+    person_id: Optional[int] = None
+    new_person: Optional[PersonCreate] = None
+    jurisdiction_names: Optional[List[str]] = None
+    topic_names: Optional[List[str]] = None
+
+
 # ── Feed Harvest ─────────────────────────────────────────────────────
 
 class HarvestFeedRequest(BaseModel):
