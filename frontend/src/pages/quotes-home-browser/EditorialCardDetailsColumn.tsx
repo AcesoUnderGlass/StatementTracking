@@ -20,6 +20,16 @@ const EditorialCardDetailsColumn = ({
   onViewOriginal: (id: number) => void;
   onTagClick?: (category: FilterTagCategory, name: string) => void;
 }) => {
+  const quoteText = quote.original_text || quote.quote_text;
+  const textFragment = quoteText
+    ? (() => {
+        const words = quoteText.split(/\s+/);
+        if (words.length <= 8) return `#:~:text=${encodeURIComponent(quoteText)}`;
+        const start = words.slice(0, 4).join(' ');
+        const end = words.slice(-4).join(' ');
+        return `#:~:text=${encodeURIComponent(start)},${encodeURIComponent(end)}`;
+      })()
+    : '';
   const articleDomain = quote.article?.url
     ? (() => {
         try {
@@ -53,7 +63,7 @@ const EditorialCardDetailsColumn = ({
       {quote.article && (
         <p className="mt-2 mb-1 text-xs text-blue-600">
           <a
-            href={quote.article.url}
+            href={`${quote.article.url}${textFragment}`}
             target="_blank"
             rel="noreferrer"
             className="hover:underline"

@@ -12,7 +12,7 @@ const EditorialCardQuoteColumn = ({quote}:{quote: QuoteWithDetails}) => {
           &ldquo;{quote.quote_text}&rdquo;
         </p>
         {quote.review_status !== 'approved' && (
-          <span className={`text-[10px] font-semibold uppercase tracking-wider mt-1 ${quote.review_status === 'pending' ? 'text-amber-600' : 'text-red-600'}`}>{quote.review_status === 'pending' ? 'unreviewed' : quote.review_status}</span>
+          <span className={`text-[10px] mt-2 font-semibold uppercase tracking-wider mt-1 ${quote.review_status === 'pending' ? 'text-amber-600' : 'text-red-600'}`}>{quote.review_status === 'pending' ? 'unreviewed' : quote.review_status}</span>
         )}
         {quote.original_text && (
           <div className="mt-2">
