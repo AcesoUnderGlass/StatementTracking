@@ -9,11 +9,11 @@ const EditorialCardQuoteColumn = ({quote}:{quote: QuoteWithDetails}) => {
       className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-6"
     >
         <p className="text-sm leading-relaxed pr-0 md:pr-3" style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}>
-          {quote.review_status !== 'approved' && (
-            <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider mr-2 px-1.5 py-0.5 align-middle ${quote.review_status === 'pending' ? 'text-amber-600 bg-amber-100' : 'text-red-600 bg-red-100'}`}>{quote.review_status}</span>
-          )}
           &ldquo;{quote.quote_text}&rdquo;
         </p>
+        {quote.review_status !== 'approved' && (
+          <span className={`text-[10px] font-semibold uppercase tracking-wider mt-1 ${quote.review_status === 'pending' ? 'text-amber-600' : 'text-red-600'}`}>{quote.review_status === 'pending' ? 'unreviewed' : quote.review_status}</span>
+        )}
         {quote.original_text && (
           <div className="mt-2">
             <button
