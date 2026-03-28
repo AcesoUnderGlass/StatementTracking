@@ -234,7 +234,7 @@ def main() -> None:
                     result.status,
                     result.extracted_count,
                     result.saved_count,
-                    f", error={result.error}" if result.error else "",
+                    f", url={c.url}, error={result.error}" if result.error else "",
                 )
 
                 if total_submitted < len(candidates):
