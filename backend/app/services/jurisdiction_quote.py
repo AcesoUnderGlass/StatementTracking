@@ -31,7 +31,7 @@ def resolve_jurisdiction_ids(db: Session, names: Optional[Iterable[str]]) -> Lis
             continue
         name = str(raw).strip()
 
-        j = db.query(Jurisdiction).filter(Jurisdiction.name == name).first()
+        j = db.query(Jurisdiction).filter(func.lower(Jurisdiction.name) == name.lower()).first()
         if not j:
             j = (
                 db.query(Jurisdiction)

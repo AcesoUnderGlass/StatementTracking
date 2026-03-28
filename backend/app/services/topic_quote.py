@@ -2,6 +2,7 @@
 
 from typing import Iterable, List, Optional, Set
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..models import Topic, Quote
@@ -20,7 +21,7 @@ def resolve_topic_ids(db: Session, names: Optional[Iterable[str]]) -> List[int]:
             continue
         name = str(raw).strip()
 
-        t = db.query(Topic).filter(Topic.name == name).first()
+        t = db.query(Topic).filter(func.lower(Topic.name) == name.lower()).first()
         if not t:
             t = Topic(name=name)
             db.add(t)
