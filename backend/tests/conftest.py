@@ -1,13 +1,13 @@
 """Shared test fixtures for the AI Quote Tracker backend."""
 
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -18,50 +18,9 @@ from app.database import Base, get_db
 from app.main import app
 from app.models import Article, Chamber, Party, Person, Quote, SpeakerType
 
-BACKEND_DIR = Path(__file__).resolve().parents[1]
+from helpers import MOCK_EXTRACTION_RESPONSE, MOCK_ARTICLE_DATA
 
-MOCK_EXTRACTION_RESPONSE = {
-    "quotes": [
-        {
-            "speaker_name": "Sen. Margaret Holloway",
-            "speaker_title": "U.S. Senator (D-CA)",
-            "speaker_type": "elected",
-            "quote_text": (
-                "We cannot afford to wait another session while this "
-                "technology reshapes every sector of our economy."
-            ),
-            "context": (
-                "Speaking at a Senate Commerce Committee hearing on AI regulation."
-            ),
-        },
-        {
-            "speaker_name": "Sen. Margaret Holloway",
-            "speaker_title": "U.S. Senator (D-CA)",
-            "speaker_type": "elected",
-            "quote_text": (
-                "The companies building these systems ... have repeatedly "
-                "shown they will not regulate themselves."
-            ),
-            "context": (
-                "Continuing her remarks on the need for legislative action."
-            ),
-        },
-        {
-            "speaker_name": "David Nakamura",
-            "speaker_title": "Chief of Staff to Sen. Holloway",
-            "speaker_type": "staff",
-            "quote_text": (
-                "We've had productive conversations with members on both "
-                "sides of the aisle, and we expect to have co-sponsors "
-                "announced within two weeks."
-            ),
-            "context": (
-                "Speaking to reporters after the hearing about the draft "
-                "AI regulation bill."
-            ),
-        },
-    ],
-}
+BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
 # ── Database ────────────────────────────────────────────────────────────
@@ -75,6 +34,10 @@ def db_session():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def _register_now(dbapi_conn, _):
+        dbapi_conn.create_function("now", 0, lambda: datetime.utcnow().isoformat())
 
     alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
     alembic_cfg.set_main_option(
@@ -136,6 +99,16 @@ def mock_anthropic(monkeypatch):
         mock_client.messages.create.return_value = mock_response
         mock_cls.return_value = mock_client
         yield mock_client
+
+
+# ── Fetch Mock ───────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def mock_fetch(monkeypatch):
+    """Patch fetch_article in the articles route module to return canned data."""
+    with patch("app.routes.articles.fetch_article", return_value=dict(MOCK_ARTICLE_DATA)) as m:
+        yield m
 
 
 # ── Data Fixtures ───────────────────────────────────────────────────────

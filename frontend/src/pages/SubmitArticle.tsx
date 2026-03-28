@@ -11,6 +11,9 @@ const SOURCE_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   youtube_transcript: { label: 'YouTube Transcript', color: 'bg-red-50 text-red-700' },
   page_transcript: { label: 'Transcript', color: 'bg-purple-50 text-purple-700' },
   press_statement: { label: 'Press Statement', color: 'bg-blue-50 text-blue-700' },
+  tweet: { label: 'Tweet', color: 'bg-sky-50 text-sky-700' },
+  bluesky_post: { label: 'Bluesky Post', color: 'bg-indigo-50 text-indigo-700' },
+  facebook_post: { label: 'Facebook Post', color: 'bg-blue-50 text-blue-700' },
 };
 
 /** Deduped new speakers from any quote on this page so every card can attach the same person. */
@@ -271,7 +274,7 @@ export default function SubmitArticle() {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Article URL, PDF link, or YouTube video URL"
+            placeholder="Article URL, PDF link, YouTube video, Twitter/X, Bluesky, or Facebook post"
             required
             className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -353,7 +356,7 @@ export default function SubmitArticle() {
                     type="url"
                     value={article.url}
                     onChange={(e) => updateArticle('url', e.target.value)}
-                    placeholder="Article URL, PDF link, or YouTube video URL"
+                    placeholder="Article URL, PDF link, YouTube video, Twitter/X, Bluesky, or Facebook post"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
                   />
                 ) : (
@@ -392,6 +395,12 @@ export default function SubmitArticle() {
             <p className="text-xs text-slate-500 mb-4">
               {sourceType === 'press_statement'
                 ? 'Detected as a single-voice document — the full text was treated as quotable.'
+                : sourceType === 'tweet'
+                ? 'Detected as a tweet — the full post was treated as a single quotable statement.'
+                : sourceType === 'bluesky_post'
+                ? 'Detected as a Bluesky post — the full post was treated as a single quotable statement.'
+                : sourceType === 'facebook_post'
+                ? 'Detected as a Facebook post — the full post was treated as a single quotable statement.'
                 : 'Detected as a transcript — the full text was treated as quotable.'}
             </p>
           )}

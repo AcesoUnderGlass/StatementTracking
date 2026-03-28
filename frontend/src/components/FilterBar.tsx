@@ -11,6 +11,8 @@ interface Props {
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 
+export const FILTER_BAR_NO_TOPICS_MESSAGE = 'No topics loaded.';
+
 export default function FilterBar({ filters, onChange, jurisdictions, topics }: Props) {
   const jurRef = useRef<HTMLDetailsElement>(null);
   const topicRef = useRef<HTMLDetailsElement>(null);
@@ -107,6 +109,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         <option value="staff">Staff</option>
         <option value="think_tank">Think Tank</option>
         <option value="gov_inst">Gov. Institution</option>
+        <option value="gov_inst">Non-Gov</option>
       </select>
 
       <details ref={jurRef} className="relative">
@@ -192,7 +195,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
           onClick={(e) => e.stopPropagation()}
         >
           {topics.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-slate-500">No topics loaded.</p>
+            <p className="px-3 py-2 text-xs text-slate-500">{FILTER_BAR_NO_TOPICS_MESSAGE}</p>
           ) : (
             <>
               {selectedTopicIds.length > 0 && (

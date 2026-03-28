@@ -1,4 +1,5 @@
 export type SpeakerType = 'elected' | 'staff' | 'think_tank' | 'gov_inst';
+export type ReviewStatus = 'approved' | 'pending' | 'rejected';
 
 export interface Person {
   id: number;
@@ -31,6 +32,8 @@ export interface ArticleMetadata {
   publication: string | null;
   published_date: string | null;
   url: string;
+  ingestion_source?: string | null;
+  ingestion_source_detail?: string | null;
 }
 
 export interface ExtractedQuote {
@@ -43,7 +46,7 @@ export interface ExtractedQuote {
   topics: string[];
 }
 
-export type SourceType = 'article' | 'youtube_transcript' | 'page_transcript' | 'press_statement';
+export type SourceType = 'article' | 'youtube_transcript' | 'page_transcript' | 'press_statement' | 'tweet' | 'bluesky_post' | 'facebook_post';
 
 export interface ExtractResponse {
   article: ArticleMetadata;
@@ -110,6 +113,7 @@ export interface QuoteWithDetails {
   date_recorded: string | null;
   is_duplicate: boolean;
   duplicate_of_id: number | null;
+  review_status: ReviewStatus;
   created_at: string;
   jurisdictions: string[];
   topics: string[];
@@ -168,4 +172,49 @@ export interface PersonDetail extends Person {
       published_date: string | null;
     } | null;
   }[];
+}
+
+export interface PendingQuote {
+  id: number;
+  quote_text: string;
+  context: string | null;
+  date_said: string | null;
+  date_recorded: string | null;
+  review_status: ReviewStatus;
+  created_at: string;
+  jurisdictions: string[];
+  topics: string[];
+  person: {
+    id: number;
+    name: string;
+    type: string | null;
+    party: string | null;
+    role: string | null;
+    chamber: string | null;
+    state: string | null;
+    employer: string | null;
+  } | null;
+}
+
+export interface PendingArticle {
+  id: number;
+  url: string;
+  title: string | null;
+  publication: string | null;
+  published_date: string | null;
+  fetched_at: string;
+  ingestion_source: string | null;
+  ingestion_source_detail: string | null;
+  quotes: PendingQuote[];
+}
+
+export interface ReviewQueueResponse {
+  articles: PendingArticle[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface ReviewStats {
+  pending_count: number;
 }

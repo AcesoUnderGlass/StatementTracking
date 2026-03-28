@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { fetchReviewStats } from '../api/client';
 
 const links = [
   { to: '/', label: 'Home', icon: '⌂' },
@@ -6,11 +8,18 @@ const links = [
   { to: '/dashboard', label: 'Dashboard', icon: '▦' },
   { to: '/submit', label: 'Submit Article', icon: '＋' },
   { to: '/bulk-submit', label: 'Bulk Submit', icon: '⇈' },
+  { to: '/review', label: 'Review Queue', icon: '⊘', showBadge: true },
   { to: '/people', label: 'Speakers', icon: '◉' },
   { to: '/admin', label: 'Admin', icon: '⚙' },
 ];
 
 export default function Sidebar() {
+  const { data: stats } = useQuery({
+    queryKey: ['review-stats'],
+    queryFn: fetchReviewStats,
+    refetchInterval: 60_000,
+  });
+
   return (
     <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col min-h-screen shrink-0">
       <div className="px-6 py-5 border-b border-slate-700">
@@ -32,6 +41,11 @@ export default function Sidebar() {
           >
             <span className="text-base">{l.icon}</span>
             {l.label}
+            {'showBadge' in l && l.showBadge && stats && stats.pending_count > 0 && (
+              <span className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold bg-amber-500 text-white">
+                {stats.pending_count}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

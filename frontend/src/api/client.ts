@@ -13,13 +13,19 @@ import type {
   DuplicateCheckResult,
   JurisdictionRow,
   TopicRow,
+  ReviewQueueResponse,
+  ReviewStats,
 } from '../types';
 
-const BASE = import.meta.env.VITE_API_URL || '/api';
+const BASE = '/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (options?.body) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options,
   });
   if (!res.ok) {
@@ -194,6 +200,38 @@ export function bulkProcessEntry(entry: BulkEntry): Promise<BulkEntryResult> {
       expected_quotes: entry.quotes,
     }),
   });
+}
+
+// ── Review Queue ────────────────────────────────────────────────────
+
+export function fetchPendingReview(
+  page = 1,
+  pageSize = 20,
+  ingestionSource?: string,
+): Promise<ReviewQueueResponse> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (ingestionSource) params.set('ingestion_source', ingestionSource);
+  return request(`/review/pending?${params}`);
+}
+
+export function fetchReviewStats(): Promise<ReviewStats> {
+  return request('/review/stats');
+}
+
+export function approveQuote(id: number): Promise<QuoteWithDetails> {
+  return request(`/quotes/${id}/approve`, { method: 'PUT' });
+}
+
+export function rejectQuote(id: number): Promise<QuoteWithDetails> {
+  return request(`/quotes/${id}/reject`, { method: 'PUT' });
+}
+
+export function approveAllArticleQuotes(articleId: number): Promise<{ ok: boolean; approved_count: number }> {
+  return request(`/articles/${articleId}/approve-all`, { method: 'POST' });
+}
+
+export function rejectAllArticleQuotes(articleId: number): Promise<{ ok: boolean; rejected_count: number }> {
+  return request(`/articles/${articleId}/reject-all`, { method: 'POST' });
 }
 
 // ── Stats ────────────────────────────────────────────────────────────

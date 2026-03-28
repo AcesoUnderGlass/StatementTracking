@@ -8,13 +8,16 @@ import {
   deleteQuote,
   type QuoteFilters,
 } from '../../api/client';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import type { QuoteWithDetails } from '../../types';
 import EditorialView from './EditorialView';
 import type { EditFormState, ViewProps } from './types';
 
+const HOME_DEFAULTS: QuoteFilters = { page: 1, page_size: 50, sort_by: 'date_said', sort_dir: 'desc' };
+
 const QuotesHomeBrowser = () => {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState<QuoteFilters>({ page: 1, page_size: 50, sort_by: 'date_said', sort_dir: 'desc' });
+  const [filters, setFilters] = useUrlFilters(HOME_DEFAULTS);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({
@@ -35,10 +38,12 @@ const QuotesHomeBrowser = () => {
     queryFn: fetchJurisdictions,
   });
 
-  const { data: topicOptions = [] } = useQuery({
+  const { data: topicOptions = [], error: topicError } = useQuery({
     queryKey: ['topics'],
     queryFn: fetchTopics,
   });
+
+  if (topicError) console.error('[topics query error]', topicError);
 
   const updateMut = useMutation({
     mutationFn: ({

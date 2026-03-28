@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Filter as FilterIcon } from 'lucide-react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
+import { FILTER_BAR_NO_TOPICS_MESSAGE } from './FilterBar';
 
 interface Props {
   filters: QuoteFilters;
@@ -242,7 +243,7 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
               onClick={(e) => e.stopPropagation()}
             >
               {topics.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-slate-500">No topics loaded.</p>
+                <p className="px-3 py-2 text-xs text-slate-500">{FILTER_BAR_NO_TOPICS_MESSAGE}</p>
               ) : (
                 <>
                   {selectedTopicIds.length > 0 && (

@@ -21,6 +21,8 @@ from ..schemas import (
     BulkUnmatchedQuote,
     CheckUrlsRequest,
     CheckUrlsResponse,
+    AutoIngestRequest,
+    AutoIngestResult,
 )
 from ..services.fetcher import fetch_article, FetchError
 from ..services.extractor import extract_quotes, ExtractionError
@@ -106,6 +108,7 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
 
 @router.post("/save", response_model=SaveResponse)
 def save_article(req: SaveRequest, db: Session = Depends(get_db)):
+    is_automated = req.ingestion_source and req.ingestion_source != "manual"
     existing = db.query(Article).filter(Article.url == req.article.url).first()
     if existing:
         article = existing
@@ -115,10 +118,13 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
             title=req.article.title,
             publication=req.article.publication,
             published_date=req.article.published_date,
+            ingestion_source=req.ingestion_source,
+            ingestion_source_detail=req.ingestion_source_detail,
         )
         db.add(article)
         db.flush()
 
+    review_status = "pending" if is_automated else "approved"
     saved_count = 0
     duplicate_count = 0
     created_people: dict[str, int] = {}
@@ -170,6 +176,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
             date_recorded=q.date_recorded or date.today(),
             is_duplicate=q.mark_as_duplicate,
             duplicate_of_id=dup_of_id,
+            review_status=review_status,
         )
         db.add(quote)
         db.flush()
@@ -231,6 +238,8 @@ def _save_bulk_quotes(
     article_data: dict,
     raw_quotes: list[dict],
     extracted: list[ExtractedQuote],
+    ingestion_source: str | None = None,
+    ingestion_source_detail: str | None = None,
 ) -> int:
     """Persist article + quotes and return the number of saved quotes."""
     existing_article = db.query(Article).filter(Article.url == article_data["url"]).first()
@@ -242,9 +251,14 @@ def _save_bulk_quotes(
             title=article_data["title"],
             publication=article_data["publication"],
             published_date=article_data["published_date"],
+            ingestion_source=ingestion_source,
+            ingestion_source_detail=ingestion_source_detail,
         )
         db.add(article)
         db.flush()
+
+    is_automated = ingestion_source and ingestion_source != "manual"
+    review_status = "pending" if is_automated else "approved"
 
     person_cache: dict[str, int] = {}
     saved = 0
@@ -256,6 +270,7 @@ def _save_bulk_quotes(
             quote_text=eq.quote_text,
             context=eq.context,
             date_recorded=date.today(),
+            review_status=review_status,
         )
         db.add(quote)
         db.flush()
@@ -360,3 +375,111 @@ def bulk_process_entry(req: BulkEntryRequest, db: Session = Depends(get_db)):
     # 5. All matched → save
     saved = _save_bulk_quotes(db, article_data, raw_quotes, extracted)
     return BulkEntryResult(status="approved", saved_count=saved, extracted_count=len(extracted))
+
+
+# ── Auto-ingest (for automated monitors) ─────────────────────────────
+
+@router.post("/auto-ingest", response_model=AutoIngestResult)
+def auto_ingest(req: AutoIngestRequest, db: Session = Depends(get_db)):
+    """Simplified endpoint for automated monitors. Accepts a URL, runs the
+    full fetch→extract→save pipeline, and marks all quotes as pending."""
+
+    existing_article = db.query(Article).filter(Article.url == req.url).first()
+    if existing_article:
+        return AutoIngestResult(
+            status="skipped",
+            error="Article URL already exists in the database.",
+        )
+
+    try:
+        article_data = fetch_article(req.url)
+    except FetchError as e:
+        logger.warning("Auto-ingest fetch error for %s: %s", req.url, e)
+        return AutoIngestResult(status="error", error=str(e))
+
+    block = _jurisdiction_prompt_block(db)
+    topic_block = _topic_prompt_block(db)
+    try:
+        raw_quotes = extract_quotes(
+            article_data["text"],
+            block,
+            topic_block,
+            source_type=article_data.get("source_type", "article"),
+        )
+    except ExtractionError as e:
+        logger.warning("Auto-ingest extraction error for %s: %s", req.url, e)
+        return AutoIngestResult(status="error", error=str(e))
+
+    if not raw_quotes:
+        return AutoIngestResult(
+            status="skipped",
+            error="No AI-related quotes found in the article.",
+        )
+
+    extracted = [
+        ExtractedQuote(
+            speaker_name=q.get("speaker_name", "Unknown"),
+            speaker_title=q.get("speaker_title"),
+            speaker_type=q.get("speaker_type"),
+            quote_text=q.get("quote_text", ""),
+            context=q.get("context"),
+            jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
+            topics=_as_jurisdiction_list(q.get("topics")),
+        )
+        for q in raw_quotes
+    ]
+
+    saved = _save_bulk_quotes(
+        db,
+        article_data,
+        raw_quotes,
+        extracted,
+        ingestion_source=req.ingestion_source,
+        ingestion_source_detail=req.ingestion_source_detail,
+    )
+
+    article_meta = ArticleMetadata(
+        title=article_data["title"],
+        publication=article_data["publication"],
+        published_date=article_data["published_date"],
+        url=article_data["url"],
+        ingestion_source=req.ingestion_source,
+        ingestion_source_detail=req.ingestion_source_detail,
+    )
+
+    return AutoIngestResult(
+        status="pending",
+        saved_count=saved,
+        extracted_count=len(extracted),
+        article=article_meta,
+    )
+
+
+# ── Batch approve / reject ───────────────────────────────────────────
+
+@router.post("/{article_id}/approve-all")
+def approve_all_quotes(article_id: int, db: Session = Depends(get_db)):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found.")
+    count = (
+        db.query(Quote)
+        .filter(Quote.article_id == article_id, Quote.review_status == "pending")
+        .update({"review_status": "approved"})
+    )
+    db.commit()
+    return {"ok": True, "approved_count": count}
+
+
+@router.post("/{article_id}/reject-all")
+def reject_all_quotes(article_id: int, db: Session = Depends(get_db)):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found.")
+    count = (
+        db.query(Quote)
+        .filter(Quote.article_id == article_id, Quote.review_status == "pending")
+        .update({"review_status": "rejected"})
+    )
+    db.commit()
+    return {"ok": True, "rejected_count": count}
