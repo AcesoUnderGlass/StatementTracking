@@ -6,7 +6,7 @@ import os
 import re
 from datetime import date
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -334,16 +334,13 @@ def _fetch_via_jina(url: str) -> dict:
     return result
 
 
-def _fetch_html_article_direct(url: str) -> dict:
-    headers = {"User-Agent": _USER_AGENT, "Accept": "text/html,*/*;q=0.8"}
-    try:
-        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
-            response = client.get(url, headers=headers)
-            response.raise_for_status()
-    except httpx.HTTPError as e:
-        raise FetchError(f"Failed to fetch article: {e}") from e
+def _extract_article_from_html(html: str, url: str) -> dict:
+    """Parse raw HTML into an article dict (title, text, date, etc.).
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    Shared by every fetch tier that returns full HTML.  Raises
+    ``FetchError`` when the extracted text is too short.
+    """
+    soup = BeautifulSoup(html, "html.parser")
 
     title_tag = soup.find("title")
     title = title_tag.get_text(strip=True) if title_tag else None
@@ -385,15 +382,201 @@ def _fetch_html_article_direct(url: str) -> dict:
     return result
 
 
-def _fetch_html_article(url: str) -> dict:
+# ---------------------------------------------------------------------------
+# Tier 1: Direct httpx fetch
+# ---------------------------------------------------------------------------
+
+def _fetch_html_article_direct(url: str) -> dict:
+    headers = {"User-Agent": _USER_AGENT, "Accept": "text/html,*/*;q=0.8"}
     try:
-        return _fetch_html_article_direct(url)
-    except FetchError as orig:
-        logger.info("Direct fetch failed for %s, trying Jina Reader fallback", url)
+        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            response = client.get(url, headers=headers)
+            response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise FetchError(f"Failed to fetch article: {e}") from e
+
+    return _extract_article_from_html(response.text, url)
+
+
+# ---------------------------------------------------------------------------
+# Tier 2: curl_cffi with browser TLS fingerprint
+# ---------------------------------------------------------------------------
+
+_BROWSER_HEADERS = {
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;"
+        "q=0.9,image/webp,*/*;q=0.8"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+}
+
+
+def _fetch_with_browser_tls(url: str) -> dict:
+    """Fetch using curl_cffi which sends a browser-identical TLS fingerprint.
+
+    Many WAFs (Cloudflare, Akamai) inspect the TLS ClientHello to
+    distinguish bots from real browsers.  ``curl_cffi`` impersonates
+    Chrome's fingerprint so the request looks identical at the TLS layer.
+    """
+    try:
+        from curl_cffi.requests import Session
+    except ImportError:
+        raise FetchError(
+            "curl_cffi not installed — browser TLS fallback unavailable"
+        )
+
+    try:
+        with Session(impersonate="chrome") as session:
+            response = session.get(
+                url,
+                headers=_BROWSER_HEADERS,
+                timeout=30,
+                allow_redirects=True,
+            )
+            response.raise_for_status()
+    except Exception as e:
+        raise FetchError(f"Browser TLS fetch failed: {e}") from e
+
+    return _extract_article_from_html(response.text, url)
+
+
+# ---------------------------------------------------------------------------
+# Tier 3: Google web cache
+# ---------------------------------------------------------------------------
+
+def _fetch_via_google_cache(url: str) -> dict:
+    """Fetch article from Google's web cache.
+
+    Useful when the origin server blocks direct access but Google has a
+    recent cached copy of the page.
+    """
+    cache_url = (
+        "https://webcache.googleusercontent.com/search"
+        f"?q=cache:{quote(url, safe='')}"
+    )
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+
+    try:
+        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            response = client.get(cache_url, headers=headers)
+            response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise FetchError(f"Google Cache fetch failed: {e}") from e
+
+    html = response.text
+
+    # Google Cache wraps content in its own chrome — strip the header div
+    # so our article extractor finds the real <article>/<main> tags.
+    soup = BeautifulSoup(html, "html.parser")
+    for div in soup.find_all("div", id="google-cache-hdr"):
+        div.decompose()
+    html = str(soup)
+
+    return _extract_article_from_html(html, url)
+
+
+# ---------------------------------------------------------------------------
+# Tier 5: Playwright headless browser (opt-in)
+# ---------------------------------------------------------------------------
+
+def _fetch_via_playwright(url: str) -> dict:
+    """Fetch article using a real headless browser via Playwright.
+
+    Solves JS challenges (Cloudflare Managed Challenge, etc.) by running
+    a full Chromium instance.  Only enabled when the environment variable
+    ``FETCHER_ENABLE_PLAYWRIGHT=1`` is set — it is too heavy for
+    serverless environments like Vercel.
+    """
+    if not os.environ.get("FETCHER_ENABLE_PLAYWRIGHT"):
+        raise FetchError(
+            "Playwright fallback disabled (set FETCHER_ENABLE_PLAYWRIGHT=1)"
+        )
+
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        raise FetchError(
+            "playwright not installed — browser fallback unavailable"
+        )
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            try:
+                context = browser.new_context(
+                    user_agent=(
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"
+                    ),
+                )
+                page = context.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+                # Give Cloudflare challenge time to resolve
+                page.wait_for_load_state("networkidle", timeout=30_000)
+                html = page.content()
+            finally:
+                browser.close()
+    except FetchError:
+        raise
+    except Exception as e:
+        raise FetchError(f"Playwright browser fetch failed: {e}") from e
+
+    return _extract_article_from_html(html, url)
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator: progressive multi-tier fetch
+# ---------------------------------------------------------------------------
+
+def _fetch_html_article(url: str) -> dict:
+    """Progressive multi-tier HTML article fetch.
+
+    Each tier is tried in order; the first one to return content wins.
+    If every tier fails, the error from tier 1 is raised so callers see
+    the most relevant diagnostic.
+
+    Tiers:
+      1. httpx direct — fast, works for most sites
+      2. curl_cffi browser TLS — bypasses TLS-fingerprint-based bot detection
+      3. Google Cache — fetches Google's cached copy of the page
+      4. Jina Reader — JS-rendering proxy, bypasses many protections
+      5. Playwright headless — real browser, solves JS challenges (opt-in)
+    """
+    tiers: list[tuple[str, callable]] = [
+        ("direct (httpx)", _fetch_html_article_direct),
+        ("browser TLS (curl_cffi)", _fetch_with_browser_tls),
+        ("Google Cache", _fetch_via_google_cache),
+        ("Jina Reader", _fetch_via_jina),
+        ("Playwright", _fetch_via_playwright),
+    ]
+
+    first_error: FetchError | None = None
+
+    for label, fetcher in tiers:
         try:
-            return _fetch_via_jina(url)
-        except FetchError:
-            raise orig
+            return fetcher(url)
+        except FetchError as e:
+            if first_error is None:
+                first_error = e
+            logger.info("Tier [%s] failed for %s: %s", label, url, e)
+
+    raise first_error  # type: ignore[misc]
 
 
 def _is_youtube_url(url: str) -> bool:
