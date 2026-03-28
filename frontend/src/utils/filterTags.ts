@@ -128,17 +128,3 @@ export function tagPillStyle(tag: FilterTag): { background: string; color: strin
       return { background: '#efe5f5', color: '#6b2fa0', border: '1px solid #d8c8e5' };
   }
 }
-
-export function tagTextColor(tag: FilterTag): string {
-  switch (tag.category) {
-    case 'party': {
-      const p = tag.value.toLowerCase();
-      if (p.includes('republican')) return '#991b1b';
-      if (p.includes('democrat')) return '#1565c0';
-      return '#5c6b31';
-    }
-    case 'type': return '#92400e';
-    case 'jurisdiction': return '#2a5080';
-    case 'topic': return '#6b2fa0';
-  }
-}
