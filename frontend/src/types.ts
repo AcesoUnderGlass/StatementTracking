@@ -232,6 +232,17 @@ export interface SuggestTagsResponse {
   topics: string[];
 }
 
+export type FilterTagCategory = 'party' | 'type' | 'jurisdiction' | 'topic';
+export interface FilterTag {
+  category: FilterTagCategory;
+  value: string;
+  label: string;
+}
+export interface FilterTagGroup {
+  category: FilterTagCategory;
+  label: string;
+  options: FilterTag[];
+}
 export interface AddQuoteRequest {
   quote_text: string;
   context?: string | null;

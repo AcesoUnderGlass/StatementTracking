@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Filter as FilterIcon } from 'lucide-react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
 import { FILTER_BAR_NO_TOPICS_MESSAGE } from './FilterBar';
 import SearchableMultiSelect from './SearchableMultiSelect';
+import FilterTagPills from './FilterTagPills';
+import FilterSearchDropdown from './FilterSearchDropdown';
+import { filtersToTags, removeTag, addTag, buildTagGroups } from '../utils/filterTags';
 
 interface Props {
   filters: QuoteFilters;
@@ -16,6 +19,8 @@ const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 
 export default function FilterBarHome({ filters, onChange, jurisdictions, topics }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const activeTags = useMemo(() => filtersToTags(filters, jurisdictions, topics), [filters, jurisdictions, topics]);
+  const tagGroups = useMemo(() => buildTagGroups(jurisdictions, topics), [jurisdictions, topics]);
 
   function update(field: keyof QuoteFilters, value: string) {
     onChange({ ...filters, [field]: value || undefined, page: 1 });
@@ -84,13 +89,18 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
           </button>
         </div>
 
+        <div className="flex-1 flex justify-center px-2">
+          <FilterTagPills tags={activeTags} onRemove={(tag) => onChange(removeTag(filters, tag))} />
+        </div>
+
         <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={filters.search || ''}
-            onChange={(e) => update('search', e.target.value)}
-            placeholder="Search quote text..."
-            className="px-3 border-b border-slate-400 py-2 focus:outline-none text-xs"
+          <FilterSearchDropdown
+            searchValue={filters.search || ''}
+            onSearchChange={(v) => update('search', v)}
+            groups={tagGroups}
+            activeTags={activeTags}
+            onSelectTag={(tag) => onChange({ ...addTag(filters, tag), search: undefined })}
+            onRemoveTag={(tag) => onChange(removeTag(filters, tag))}
           />
           <button
             type="button"

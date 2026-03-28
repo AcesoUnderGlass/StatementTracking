@@ -20,6 +20,7 @@ const EditorialCardThreeColumns = ({
   onSaveEdit,
   onDelete,
   onViewOriginal,
+  onTagClick,
 }: QuoteItemProps) => {
   return (
     <div
@@ -29,7 +30,7 @@ const EditorialCardThreeColumns = ({
     >
       <EditorialCardPersonColumn quote={quote} />
       <EditorialCardQuoteColumn quote={quote} />
-      <EditorialCardTagsColumn quote={quote} />
+      <EditorialCardTagsColumn quote={quote} onTagClick={onTagClick} />
       <EditorialCardDetailsColumn
         quote={quote}
         isSortingByAddedDate={isSortingByAddedDate}

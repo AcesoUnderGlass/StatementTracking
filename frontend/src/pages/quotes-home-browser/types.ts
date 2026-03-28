@@ -1,5 +1,5 @@
 import type { QuoteFilters } from '../../api/client';
-import type { JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../../types';
+import type { FilterTagCategory, JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../../types';
 
 export interface EditFormState {
   quote_text: string;
@@ -44,4 +44,5 @@ export interface QuoteItemProps {
   onSaveEdit: () => void;
   onDelete: () => void;
   onViewOriginal: (id: number) => void;
+  onTagClick?: (category: FilterTagCategory, name: string) => void;
 }

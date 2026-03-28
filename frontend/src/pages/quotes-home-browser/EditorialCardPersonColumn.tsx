@@ -29,7 +29,7 @@ const EditorialCardPersonColumn = ({quote}:{quote: QuoteWithDetails}) => {
           </p>
         )}
         {dateSaidFormatted && (
-          <p className="text-sm mt-1 opacity-50">
+          <p className="text-xs mt-[6px] opacity-50 font-sans">
             {dateSaidFormatted}
           </p>
         )}

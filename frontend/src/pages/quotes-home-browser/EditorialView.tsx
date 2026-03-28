@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import FilterBarHome from '../../components/FilterBarHome';
 import EditorialCardTableVersion from './EditorialCardTableVersion';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
+import type { FilterTagCategory } from '../../types';
+import { addTag } from '../../utils/filterTags';
 
 const EditorialView = ({
   filters,
@@ -28,6 +30,20 @@ const EditorialView = ({
   function scrollListToTop() {
     listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  const handleTagClick = useCallback((category: FilterTagCategory, name: string) => {
+    let value = name;
+    if (category === 'jurisdiction') {
+      const row = jurisdictionOptions.find((j) => j.name === name);
+      if (!row) return;
+      value = String(row.id);
+    } else if (category === 'topic') {
+      const row = topicOptions.find((t) => t.name === name);
+      if (!row) return;
+      value = String(row.id);
+    }
+    setFilters(addTag(filters, { category, value, label: name }));
+  }, [filters, setFilters, jurisdictionOptions, topicOptions]);
 
   return (
     <div
@@ -98,6 +114,7 @@ const EditorialView = ({
                 onSaveEdit={() => saveEdit(q.id)}
                 onDelete={() => onDelete(q.id)}
                 onViewOriginal={(id) => setExpanded(id)}
+                onTagClick={handleTagClick}
               />
             ))}
             {data?.quotes.length === 0 && (
