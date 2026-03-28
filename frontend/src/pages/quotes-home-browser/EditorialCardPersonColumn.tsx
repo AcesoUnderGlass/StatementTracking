@@ -26,14 +26,12 @@ const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick}:{quote: Quot
             {quote.person.role}
           </p>
         )}
-        {dateSaidFormatted && (
-          <p
-            className="text-xs mt-[6px] opacity-50 font-sans cursor-pointer hover:opacity-80"
-            onClick={(e) => { e.stopPropagation(); onDateClick?.(quote.date_said!); }}
-          >
-            {dateSaidFormatted}
-          </p>
-        )}
+        <p
+          className={`text-xs mt-[6px] opacity-50 font-sans${dateSaidFormatted ? ' cursor-pointer hover:opacity-80' : ''}`}
+          onClick={dateSaidFormatted ? (e) => { e.stopPropagation(); onDateClick?.(quote.date_said!); } : undefined}
+        >
+          {dateSaidFormatted || 'Date Unknown'}
+        </p>
       </div>
     </div>
   );

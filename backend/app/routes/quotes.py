@@ -134,6 +134,7 @@ def list_quotes(
     jurisdiction_ids: Optional[list[int]] = Query(None),
     topic_ids: Optional[list[int]] = Query(None),
     include_duplicates: bool = Query(False),
+    include_unapproved: bool = Query(False),
     review_status: Optional[str] = Query("approved"),
     sort_by: Optional[str] = Query(None),
     sort_dir: Optional[str] = Query(None),
@@ -148,7 +149,7 @@ def list_quotes(
     if not include_duplicates:
         base = base.filter(Quote.is_duplicate == False)  # noqa: E712
 
-    if review_status:
+    if review_status and not include_unapproved:
         base = base.filter(Quote.review_status == review_status)
 
     if person_id:

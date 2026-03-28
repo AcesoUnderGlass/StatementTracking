@@ -91,6 +91,7 @@ export interface QuoteFilters {
   added_from_date?: string;
   added_to_date?: string;
   include_duplicates?: boolean;
+  include_unapproved?: boolean;
   sort_by?: 'date_said' | 'created_at' | 'speaker';
   sort_dir?: 'asc' | 'desc';
   page?: number;

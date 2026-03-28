@@ -55,6 +55,11 @@ function parseFiltersFromParams(
     filters.include_duplicates = includeDuplicates === 'true';
   }
 
+  const includeUnapproved = params.get('include_unapproved');
+  if (includeUnapproved !== null) {
+    filters.include_unapproved = includeUnapproved === 'true';
+  }
+
   return filters;
 }
 
@@ -93,6 +98,9 @@ function filtersToParams(
   }
   if (filters.include_duplicates !== undefined && filters.include_duplicates !== defaults.include_duplicates) {
     params.set('include_duplicates', String(filters.include_duplicates));
+  }
+  if (filters.include_unapproved !== undefined && filters.include_unapproved !== defaults.include_unapproved) {
+    params.set('include_unapproved', String(filters.include_unapproved));
   }
 
   return params;
