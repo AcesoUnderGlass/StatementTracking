@@ -20,6 +20,26 @@ import feedparser
 import yaml
 
 from .client import IngestionClient
+from .constants import (
+    ENV_MONITOR_FEEDS_FILE,
+    LOG_DATEFMT,
+    LOG_FORMAT,
+    MSG_DONE_SUBMITTED,
+    MSG_DRY_RUN_WOULD_SUBMIT,
+    MSG_FEED_ERROR,
+    MSG_FOUND_CANDIDATES_TOTAL,
+    MSG_LOADED_FEEDS,
+    MSG_NEW_ENTRIES_FROM_FEED,
+    MSG_NO_FEEDS_IN_FILE,
+    MSG_NO_RELEVANT_ARTICLES,
+    MSG_PASSED_KEYWORD_FILTER,
+    MSG_POLLING_FEED,
+    MSG_SKIP_CUTOFF_ON_ERROR,
+    MSG_SUBMIT_RESULT,
+    MSG_SUBMITTING,
+    SOURCE_TYPE_GOVERNMENT_RSS,
+    SOURCE_TYPE_RSS_FEED,
+)
 from .keywords import is_relevant
 from .state import StateTracker
 
@@ -37,7 +57,7 @@ class Candidate(NamedTuple):
 
 
 def _resolve_feeds_path() -> Path:
-    env = os.environ.get("MONITOR_FEEDS_FILE")
+    env = os.environ.get(ENV_MONITOR_FEEDS_FILE)
     if env:
         return Path(env)
     return _DEFAULT_FEEDS_FILE
@@ -48,7 +68,7 @@ def load_feeds(path: Path) -> list[dict]:
         data = yaml.safe_load(f) or {}
     feeds = data.get("feeds", [])
     if not feeds:
-        raise SystemExit(f"No feeds found in {path}")
+        raise SystemExit(MSG_NO_FEEDS_IN_FILE.format(path=path))
     return feeds
 
 
@@ -72,7 +92,7 @@ def poll_feed(
     parsed = feedparser.parse(feed_url)
 
     if parsed.bozo and not parsed.entries:
-        logger.warning("Feed error for %s: %s", feed_url, parsed.bozo_exception)
+        logger.warning(MSG_FEED_ERROR, feed_url, parsed.bozo_exception)
         return []
 
     results: list[tuple[str, str, str]] = []
@@ -109,27 +129,27 @@ def collect_candidates(
     for feed in feeds:
         feed_url = feed["url"]
         feed_name = feed.get("name", feed_url)
-        source_type = feed.get("source_type", "rss_feed")
+        source_type = feed.get("source_type", SOURCE_TYPE_RSS_FEED)
 
         last_poll = state.get_last_poll(feed_url)
         cutoff = last_poll if last_poll else (now - _FIRST_RUN_LOOKBACK)
 
         logger.info(
-            "Polling %s (cutoff: %s)",
+            MSG_POLLING_FEED,
             feed_name,
             cutoff.strftime("%Y-%m-%d %H:%M UTC"),
         )
 
         entries = poll_feed(feed_url, cutoff)
-        logger.info("  %d new entries from feed", len(entries))
+        logger.info(MSG_NEW_ENTRIES_FROM_FEED, len(entries))
 
         relevant = 0
         for url, title, desc in entries:
-            if source_type == "government_rss" or is_relevant(title, desc):
+            if source_type == SOURCE_TYPE_GOVERNMENT_RSS or is_relevant(title, desc):
                 candidates.append(Candidate(url, title, source_type, feed_name))
                 relevant += 1
 
-        logger.info("  %d passed keyword filter", relevant)
+        logger.info(MSG_PASSED_KEYWORD_FILTER, relevant)
         polled_feed_urls.append(feed_url)
 
     return candidates, polled_feed_urls
@@ -159,13 +179,13 @@ def main() -> None:
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%H:%M:%S",
+        format=LOG_FORMAT,
+        datefmt=LOG_DATEFMT,
     )
 
     feeds_path = args.feeds or _resolve_feeds_path()
     feeds = load_feeds(feeds_path)
-    logger.info("Loaded %d feeds from %s", len(feeds), feeds_path)
+    logger.info(MSG_LOADED_FEEDS, len(feeds), feeds_path)
 
     now = datetime.now(timezone.utc)
 
@@ -173,42 +193,44 @@ def main() -> None:
         candidates, polled_feed_urls = collect_candidates(feeds, state, now)
 
     if not candidates:
-        logger.info("No relevant articles found across all feeds")
+        logger.info(MSG_NO_RELEVANT_ARTICLES)
         return
 
-    logger.info("Found %d candidate articles total", len(candidates))
+    logger.info(MSG_FOUND_CANDIDATES_TOTAL, len(candidates))
 
     if args.dry_run:
         for c in candidates:
-            logger.info("[DRY RUN] Would submit: %s (%s) [%s]", c.title, c.url, c.feed_name)
+            logger.info(MSG_DRY_RUN_WOULD_SUBMIT, c.title, c.url, c.feed_name)
         return
 
+    name_to_url = {feed.get("name", feed["url"]): feed["url"] for feed in feeds}
+
     with IngestionClient() as client, StateTracker() as state:
-        for feed_url in polled_feed_urls:
-            state.set_last_poll(feed_url, now)
         by_source: dict[str, list[Candidate]] = {}
         for c in candidates:
             by_source.setdefault(c.source_type, []).append(c)
 
         total_submitted = 0
         total_saved = 0
+        failed_feed_urls: set[str] = set()
 
         for source_type, group in by_source.items():
-            urls = [c.url for c in group]
             detail_map = {c.url: c.feed_name for c in group}
 
             for c in group:
-                logger.info("Submitting: %s [%s]", c.title[:80], c.feed_name)
+                logger.info(MSG_SUBMITTING, c.title[:80], c.feed_name)
                 result = client.submit_url(c.url, source_type, detail_map[c.url])
                 total_submitted += 1
                 total_saved += result.saved_count
 
-                if state:
-                    state.mark_seen(c.url, source_type)
-                    state.mark_submitted(c.url, result.status)
+                state.mark_seen(c.url, source_type)
+                state.mark_submitted(c.url, result.status)
+
+                if result.error:
+                    failed_feed_urls.add(name_to_url.get(c.feed_name, c.feed_name))
 
                 logger.info(
-                    "  -> %s (extracted=%d, saved=%d%s)",
+                    MSG_SUBMIT_RESULT,
                     result.status,
                     result.extracted_count,
                     result.saved_count,
@@ -218,11 +240,13 @@ def main() -> None:
                 if total_submitted < len(candidates):
                     time.sleep(client.config.submission_delay_seconds)
 
-    logger.info(
-        "Done. Submitted %d articles, %d quotes saved for review.",
-        total_submitted,
-        total_saved,
-    )
+        for feed_url in polled_feed_urls:
+            if feed_url not in failed_feed_urls:
+                state.set_last_poll(feed_url, now)
+            else:
+                logger.warning(MSG_SKIP_CUTOFF_ON_ERROR, feed_url)
+
+    logger.info(MSG_DONE_SUBMITTED, total_submitted, total_saved)
 
 
 if __name__ == "__main__":
