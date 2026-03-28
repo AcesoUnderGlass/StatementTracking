@@ -1,8 +1,11 @@
 """URL normalization for consistent deduplication across all monitors."""
 from __future__ import annotations
 
+import logging
 import re
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
+logger = logging.getLogger(__name__)
 
 _STRIP_PARAMS = {
     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
@@ -61,25 +64,25 @@ def normalize_url(url: str) -> str:
 
 
 def resolve_google_news_url(url: str) -> str | None:
-    """Attempt to resolve a Google News redirect URL to the actual article URL.
+    """Decode a Google News wrapper URL to the actual article URL.
 
-    Google News RSS entries use URLs like:
-    https://news.google.com/rss/articles/CBMi...
+    Google News RSS entries use URLs like
+    ``https://news.google.com/rss/articles/CBMi...`` which don't
+    redirect via HTTP — they require JS execution.  Uses
+    ``googlenewsdecoder`` to extract the real destination.
 
-    These redirect to the actual article. We follow the redirect to get the
-    real URL. Returns None if resolution fails.
+    Returns the normalized article URL, or None if decoding fails.
     """
     if not _GOOGLE_NEWS_RE.match(url):
         return None
 
     try:
-        import httpx
-        with httpx.Client(timeout=10.0, follow_redirects=True) as client:
-            response = client.head(url)
-            final_url = str(response.url)
-            if not _GOOGLE_NEWS_RE.match(final_url):
-                return normalize_url(final_url)
-    except Exception:
-        pass
+        from googlenewsdecoder import gnewsdecoder
+
+        result = gnewsdecoder(url, interval=None)
+        if result.get("status"):
+            return normalize_url(result["decoded_url"])
+    except Exception as exc:
+        logger.debug("Google News URL decode failed for %s: %s", url, exc)
 
     return None

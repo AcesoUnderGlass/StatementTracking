@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import io
+import logging
 import re
 from datetime import date
 from typing import Optional
@@ -8,6 +11,8 @@ import httpx
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
+
+logger = logging.getLogger(__name__)
 
 PUBLICATION_LOOKUP = {
     "nytimes.com": "The New York Times",
@@ -53,6 +58,34 @@ def _derive_publication(url: str) -> str:
 
 class FetchError(Exception):
     pass
+
+
+_GOOGLE_NEWS_RE = re.compile(
+    r"^https?://news\.google\.com/(?:rss/)?articles/",
+    re.IGNORECASE,
+)
+
+
+def _resolve_google_news_url(url: str) -> str | None:
+    """Decode a Google News wrapper URL to the actual article URL.
+
+    Google News RSS entries use URLs like
+    ``https://news.google.com/rss/articles/CBMi...`` which don't
+    redirect via HTTP — they require JS execution.  The
+    ``googlenewsdecoder`` library fetches decoding params from Google
+    and returns the real destination.
+    """
+    if not _GOOGLE_NEWS_RE.match(url):
+        return None
+    try:
+        from googlenewsdecoder import gnewsdecoder
+
+        result = gnewsdecoder(url, interval=None)
+        if result.get("status"):
+            return result["decoded_url"]
+    except Exception as exc:
+        logger.debug("Google News URL decode failed for %s: %s", url, exc)
+    return None
 
 
 def _is_pdf_url(url: str) -> bool:
@@ -321,6 +354,10 @@ def _is_facebook_url(url: str) -> bool:
 
 
 def fetch_article(url: str) -> dict:
+    resolved = _resolve_google_news_url(url)
+    if resolved:
+        url = resolved
+
     if _is_youtube_url(url):
         from .youtube_fetcher import fetch_youtube_transcript
         return fetch_youtube_transcript(url)

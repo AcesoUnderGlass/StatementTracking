@@ -8,6 +8,7 @@ from app.services.fetcher import (
     FetchError,
     _fetch_pdf_article,
     _is_pdf_url,
+    _resolve_google_news_url,
     fetch_article,
 )
 
@@ -78,3 +79,74 @@ class TestFetchArticleRoutesToPdf:
         }
         fetch_article("https://a.com/x.pdf")
         mock_pdf.assert_called_once_with("https://a.com/x.pdf")
+
+
+_GNEWS_URL = (
+    "https://news.google.com/rss/articles/"
+    "CBMi6AFBVV95cUxPSUtwbVV4Umo0YmUyUmo2NXM5SEI2N3NqOGg0?oc=5"
+)
+_GNEWS_READ_URL = (
+    "https://news.google.com/articles/"
+    "CBMi6AFBVV95cUxPSUtwbVV4Umo0YmUyUmo2NXM5SEI2N3NqOGg0?oc=5"
+)
+_REAL_ARTICLE_URL = "https://www.reuters.com/technology/ai-policy-update-2025/"
+
+
+class TestResolveGoogleNewsUrl:
+    def test_non_google_url_returns_none(self):
+        assert _resolve_google_news_url("https://reuters.com/article/123") is None
+
+    @patch("googlenewsdecoder.gnewsdecoder")
+    def test_successful_decode(self, mock_decoder):
+        mock_decoder.return_value = {
+            "status": True,
+            "decoded_url": _REAL_ARTICLE_URL,
+        }
+        result = _resolve_google_news_url(_GNEWS_URL)
+        assert result == _REAL_ARTICLE_URL
+        mock_decoder.assert_called_once_with(_GNEWS_URL, interval=None)
+
+    @patch("googlenewsdecoder.gnewsdecoder")
+    def test_matches_read_style_urls(self, mock_decoder):
+        mock_decoder.return_value = {
+            "status": True,
+            "decoded_url": _REAL_ARTICLE_URL,
+        }
+        result = _resolve_google_news_url(_GNEWS_READ_URL)
+        assert result == _REAL_ARTICLE_URL
+
+    @patch("googlenewsdecoder.gnewsdecoder")
+    def test_decode_failure_returns_none(self, mock_decoder):
+        mock_decoder.return_value = {"status": False, "message": "decode error"}
+        assert _resolve_google_news_url(_GNEWS_URL) is None
+
+    @patch("googlenewsdecoder.gnewsdecoder", side_effect=Exception("network"))
+    def test_exception_returns_none(self, mock_decoder):
+        assert _resolve_google_news_url(_GNEWS_URL) is None
+
+
+class TestFetchArticleResolvesGoogleNews:
+    @patch("app.services.fetcher._fetch_html_article")
+    @patch("app.services.fetcher._resolve_google_news_url")
+    def test_google_news_url_resolved_before_fetch(self, mock_resolve, mock_html):
+        mock_resolve.return_value = _REAL_ARTICLE_URL
+        mock_html.return_value = {
+            "title": "AI Policy Update",
+            "text": "z" * 200,
+            "publication": "Reuters",
+            "published_date": None,
+            "url": _REAL_ARTICLE_URL,
+        }
+        result = fetch_article(_GNEWS_URL)
+        mock_resolve.assert_called_once_with(_GNEWS_URL)
+        mock_html.assert_called_once_with(_REAL_ARTICLE_URL)
+        assert result["url"] == _REAL_ARTICLE_URL
+
+    @patch("app.services.fetcher._fetch_html_article")
+    @patch("app.services.fetcher._resolve_google_news_url")
+    def test_unresolvable_google_url_falls_through(self, mock_resolve, mock_html):
+        mock_resolve.return_value = None
+        mock_html.side_effect = FetchError("Article text is too short or empty")
+        with pytest.raises(FetchError, match="too short"):
+            fetch_article(_GNEWS_URL)
+        mock_html.assert_called_once_with(_GNEWS_URL)
