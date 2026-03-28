@@ -51,6 +51,7 @@ const SharedEditForm = ({
     const next = selectedNames.has(name)
       ? editForm.jurisdiction_names.filter((n) => n !== name)
       : [...editForm.jurisdiction_names, name];
+    console.log('[toggleName]', name, 'before:', editForm.jurisdiction_names, 'after:', next);
     setEditForm({ ...editForm, jurisdiction_names: next });
   }
 
@@ -58,6 +59,7 @@ const SharedEditForm = ({
     const next = selectedTopicNames.has(name)
       ? editForm.topic_names.filter((n) => n !== name)
       : [...editForm.topic_names, name];
+    console.log('[toggleTopicName]', name, 'before:', editForm.topic_names, 'after:', next);
     setEditForm({ ...editForm, topic_names: next });
   }
 

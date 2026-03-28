@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 
+TAG_FIELDS = [
+    ("jurisdiction_names", set_quote_jurisdictions, Quote.jurisdictions),
+    ("topic_names",        set_quote_topics,        Quote.topics),
+]
+
 
 def _quote_to_dict(q: Quote) -> dict:
     return {
@@ -254,27 +259,28 @@ def update_quote(
         raise HTTPException(status_code=404, detail="Quote not found.")
 
     update_data = updates.model_dump(exclude_unset=True)
-    jurisdictions = update_data.pop("jurisdiction_names", None)
-    topic_names = update_data.pop("topic_names", None)
+    tag_debug = {k: update_data.get(k) for k in ["jurisdiction_names", "topic_names"]}
+    print(f"[DEBUG] update_quote {quote_id}: {tag_debug}")
+
+    tag_values = {}
+    for field_name, _setter, _rel in TAG_FIELDS:
+        tag_values[field_name] = update_data.pop(field_name, None)
+
     for field, value in update_data.items():
         setattr(quote, field, value)
 
-    db.commit()
-    db.refresh(quote)
+    for field_name, setter, _rel in TAG_FIELDS:
+        if field_name in updates.model_fields_set:
+            setter(db, quote, tag_values[field_name])
 
-    unset_fields = updates.model_dump(exclude_unset=True)
-    if "jurisdiction_names" in unset_fields:
-        set_quote_jurisdictions(db, quote, jurisdictions)
-        db.commit()
-    if "topic_names" in unset_fields:
-        set_quote_topics(db, quote, topic_names)
-        db.commit()
+    db.commit()
 
     loaded = (
         db.query(Quote)
         .options(
             selectinload(Quote.person),
             selectinload(Quote.article),
+            *[selectinload(rel) for _name, _setter, rel in TAG_FIELDS],
         )
         .filter(Quote.id == quote_id)
         .first()

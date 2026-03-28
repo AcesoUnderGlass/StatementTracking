@@ -163,6 +163,7 @@ export default function QuotesBrowser() {
   });
 
   function startEdit(q: QuoteWithDetails) {
+    console.log('[startEdit]', q.id, 'jurisdictions:', q.jurisdictions, 'topics:', q.topics);
     setEditing(q.id);
     setEditForm({
       quote_text: q.quote_text,
@@ -174,6 +175,7 @@ export default function QuotesBrowser() {
   }
 
   function saveEdit(id: number) {
+    console.log('[saveEdit]', id, 'jurisdiction_names:', editForm.jurisdiction_names, 'topic_names:', editForm.topic_names);
     updateMut.mutate({
       id,
       quote_text: editForm.quote_text,
