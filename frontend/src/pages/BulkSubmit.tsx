@@ -319,6 +319,7 @@ function ReviewPanel({
             speaker_title: null,
             speaker_type: 'elected',
             quote_text: '',
+            original_text: null,
             context: null,
             jurisdiction_names: [],
             topic_names: [],
