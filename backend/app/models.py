@@ -131,6 +131,7 @@ class Quote(Base):
     duplicate_of_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("quotes.id"), nullable=True
     )
+    original_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     review_status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="approved"
     )

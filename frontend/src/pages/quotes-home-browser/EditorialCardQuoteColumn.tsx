@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import type { QuoteWithDetails } from '../../types';
 
 const EditorialCardQuoteColumn = ({quote}:{quote: QuoteWithDetails}) => {
+  const [showOriginal, setShowOriginal] = useState(false);
+
   return (
     <div
       className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-6"
@@ -9,6 +12,30 @@ const EditorialCardQuoteColumn = ({quote}:{quote: QuoteWithDetails}) => {
         >
           &ldquo;{quote.quote_text}&rdquo;
         </p>
+        {quote.original_text && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setShowOriginal(!showOriginal)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-3 w-3 transition-transform ${showOriginal ? 'rotate-90' : ''}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+              Original text
+            </button>
+            {showOriginal && (
+              <p className="mt-1 text-sm leading-relaxed text-slate-500 pl-3 border-l-2 border-slate-200" style={{ fontFamily: 'Lora, serif' }}>
+                {quote.original_text}
+              </p>
+            )}
+          </div>
+        )}
     </div>
   );
 };

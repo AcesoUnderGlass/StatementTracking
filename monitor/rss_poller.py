@@ -46,7 +46,7 @@ from .state import StateTracker
 logger = logging.getLogger(__name__)
 
 _DEFAULT_FEEDS_FILE = Path(__file__).parent / "feeds.yaml"
-_FIRST_RUN_LOOKBACK = timedelta(hours=24)
+_FIRST_RUN_LOOKBACK = timedelta(days=2)
 
 
 class Candidate(NamedTuple):

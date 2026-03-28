@@ -16,6 +16,7 @@ def _pending_quote_dict(q: Quote) -> dict:
     return {
         "id": q.id,
         "quote_text": q.quote_text,
+        "original_text": q.original_text,
         "context": q.context,
         "date_said": q.date_said.isoformat() if q.date_said else None,
         "date_recorded": q.date_recorded.isoformat() if q.date_recorded else None,

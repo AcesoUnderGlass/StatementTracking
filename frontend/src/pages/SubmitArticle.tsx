@@ -34,6 +34,7 @@ function blankQuoteCard(): QuoteCardData {
     speaker_title: null,
     speaker_type: 'elected',
     quote_text: '',
+    original_text: null,
     context: null,
     jurisdiction_names: [],
     topic_names: [],
@@ -105,6 +106,7 @@ export default function SubmitArticle() {
         speaker_title: q.speaker_title,
         speaker_type: q.speaker_type || 'elected',
         quote_text: q.quote_text,
+        original_text: q.original_text || null,
         context: q.context,
         jurisdiction_names: q.jurisdictions ?? [],
         topic_names: q.topics ?? [],
@@ -191,6 +193,7 @@ export default function SubmitArticle() {
       article,
       quotes: approved.map((q) => ({
         quote_text: q.quote_text,
+        original_text: q.original_text || undefined,
         context: q.context,
         date_said: article.published_date,
         person_id: q.person_id,

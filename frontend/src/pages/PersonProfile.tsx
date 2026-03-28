@@ -6,6 +6,59 @@ import { fetchPerson, updatePerson } from '../api/client';
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 const CHAMBERS = ['Senate', 'House', 'Executive', 'Other'];
 
+function PersonQuoteItem({ q }: { q: { id: number; quote_text: string; original_text?: string | null; context: string | null; date_said: string | null; date_recorded: string | null; article: { url: string; title: string | null; publication: string | null } | null } }) {
+  const [showOriginal, setShowOriginal] = useState(false);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+      <blockquote className="text-slate-800 leading-relaxed mb-3 italic border-l-4 border-blue-300 pl-4">
+        "{q.quote_text}"
+      </blockquote>
+      {q.original_text && (
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => setShowOriginal(!showOriginal)}
+            className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className={`h-3 w-3 transition-transform ${showOriginal ? 'rotate-90' : ''}`}
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            Original text
+          </button>
+          {showOriginal && (
+            <blockquote className="mt-1 text-sm text-slate-600 leading-relaxed pl-4 border-l-4 border-slate-200">
+              {q.original_text}
+            </blockquote>
+          )}
+        </div>
+      )}
+      {q.context && (
+        <p className="text-sm text-slate-500 mb-2">{q.context}</p>
+      )}
+      <div className="flex items-center gap-4 text-xs text-slate-400">
+        {q.date_said && <span>Said: {q.date_said}</span>}
+        {q.date_recorded && <span>Recorded: {q.date_recorded}</span>}
+        {q.article && (
+          <a
+            href={q.article.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            {q.article.publication || q.article.title || 'Source'}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PersonProfile() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -168,31 +221,7 @@ export default function PersonProfile() {
 
       <div className="space-y-4">
         {person.quotes?.map((q) => (
-          <div
-            key={q.id}
-            className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm"
-          >
-            <blockquote className="text-slate-800 leading-relaxed mb-3 italic border-l-4 border-blue-300 pl-4">
-              "{q.quote_text}"
-            </blockquote>
-            {q.context && (
-              <p className="text-sm text-slate-500 mb-2">{q.context}</p>
-            )}
-            <div className="flex items-center gap-4 text-xs text-slate-400">
-              {q.date_said && <span>Said: {q.date_said}</span>}
-              {q.date_recorded && <span>Recorded: {q.date_recorded}</span>}
-              {q.article && (
-                <a
-                  href={q.article.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-500 hover:underline"
-                >
-                  {q.article.publication || q.article.title || 'Source'}
-                </a>
-              )}
-            </div>
-          </div>
+          <PersonQuoteItem key={q.id} q={q} />
         ))}
 
         {(!person.quotes || person.quotes.length === 0) && (

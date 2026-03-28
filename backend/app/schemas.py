@@ -70,6 +70,7 @@ class ExtractedQuote(BaseModel):
     speaker_title: Optional[str] = None
     speaker_type: Optional[str] = None
     quote_text: str
+    original_text: Optional[str] = None
     context: Optional[str] = None
     jurisdictions: List[str] = Field(default_factory=list)
     topics: List[str] = Field(default_factory=list)
@@ -87,6 +88,7 @@ class ExtractResponse(BaseModel):
 
 class QuoteSaveItem(BaseModel):
     quote_text: str
+    original_text: Optional[str] = None
     context: Optional[str] = None
     date_said: Optional[date] = None
     date_recorded: Optional[date] = None
@@ -112,6 +114,7 @@ class SaveResponse(BaseModel):
 
 class QuoteUpdate(BaseModel):
     quote_text: Optional[str] = None
+    original_text: Optional[str] = None
     context: Optional[str] = None
     date_said: Optional[date] = None
     date_recorded: Optional[date] = None
@@ -149,6 +152,7 @@ class QuoteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     quote_text: str
+    original_text: Optional[str] = None
     context: Optional[str] = None
     date_said: Optional[date] = None
     date_recorded: Optional[date] = None
@@ -252,6 +256,7 @@ class AutoIngestResult(BaseModel):
 class PendingQuoteOut(BaseModel):
     id: int
     quote_text: str
+    original_text: Optional[str] = None
     context: Optional[str] = None
     date_said: Optional[date] = None
     date_recorded: Optional[date] = None

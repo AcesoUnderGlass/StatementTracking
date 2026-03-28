@@ -24,6 +24,34 @@ interface EditFormState {
   topic_names: string[];
 }
 
+function OriginalTextToggle({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="mb-3">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setShow(!show); }}
+        className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`h-3 w-3 transition-transform ${show ? 'rotate-90' : ''}`}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+        </svg>
+        Original text
+      </button>
+      {show && (
+        <blockquote className="mt-1 text-sm text-slate-500 leading-relaxed pl-4 border-l-4 border-slate-200 italic">
+          {text}
+        </blockquote>
+      )}
+    </div>
+  );
+}
+
 interface ViewProps {
   filters: QuoteFilters;
   setFilters: (f: QuoteFilters) => void;
@@ -346,6 +374,10 @@ function ExpandedContent({
       >
         &ldquo;{quote.quote_text}&rdquo;
       </blockquote>
+
+      {quote.original_text && (
+        <OriginalTextToggle text={quote.original_text} />
+      )}
 
       {quote.person && (
         <p className={`text-sm ${t.meta} mb-3`}>

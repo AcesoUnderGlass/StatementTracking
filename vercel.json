@@ -5,11 +5,11 @@
   "installCommand": "cd frontend && npm install",
   "functions": {
     "api/index.py": {
-      "runtime": "@vercel/python",
+      "runtime": "@vercel/python@6.23.0",
       "includeFiles": "backend/**"
     },
     "api/harvest.py": {
-      "runtime": "@vercel/python",
+      "runtime": "@vercel/python@6.23.0",
       "includeFiles": "monitor/**",
       "maxDuration": 300
     }
@@ -22,7 +22,7 @@
   "crons": [
     {
       "path": "/api/harvest",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }

@@ -70,6 +70,20 @@ def _as_jurisdiction_list(val) -> list:
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
 
+def _raw_to_extracted(q: dict) -> ExtractedQuote:
+    """Convert a single raw LLM quote dict to an ``ExtractedQuote``."""
+    return ExtractedQuote(
+        speaker_name=q.get("speaker_name", "Unknown"),
+        speaker_title=q.get("speaker_title"),
+        speaker_type=q.get("speaker_type"),
+        quote_text=q.get("quote_text", ""),
+        original_text=q.get("original_quote_text"),
+        context=q.get("context"),
+        jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
+        topics=_as_jurisdiction_list(q.get("topics")),
+    )
+
+
 @router.post("/extract", response_model=ExtractResponse)
 def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
     try:
@@ -78,6 +92,7 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail=str(e))
 
     source_type = article_data.get("source_type", "article")
+    language = article_data.get("language", "en")
     block = _jurisdiction_prompt_block(db)
     topic_block = _topic_prompt_block(db)
     try:
@@ -86,22 +101,12 @@ def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
             block,
             topic_block,
             source_type=source_type,
+            language=language,
         )
     except ExtractionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    quotes = [
-        ExtractedQuote(
-            speaker_name=q.get("speaker_name", "Unknown"),
-            speaker_title=q.get("speaker_title"),
-            speaker_type=q.get("speaker_type"),
-            quote_text=q.get("quote_text", ""),
-            context=q.get("context"),
-            jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
-            topics=_as_jurisdiction_list(q.get("topics")),
-        )
-        for q in raw_quotes
-    ]
+    quotes = [_raw_to_extracted(q) for q in raw_quotes]
 
     article_meta = ArticleMetadata(
         title=article_data["title"],
@@ -178,6 +183,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
             person_id=person_id,
             article_id=article.id,
             quote_text=q.quote_text,
+            original_text=q.original_text,
             context=q.context,
             date_said=q.date_said,
             date_recorded=q.date_recorded or date.today(),
@@ -275,6 +281,7 @@ def _save_bulk_quotes(
             person_id=person_id,
             article_id=article.id,
             quote_text=eq.quote_text,
+            original_text=eq.original_text,
             context=eq.context,
             date_recorded=date.today(),
             review_status=review_status,
@@ -317,12 +324,14 @@ def bulk_process_entry(req: BulkEntryRequest, db: Session = Depends(get_db)):
     # 2. Extract
     block = _jurisdiction_prompt_block(db)
     topic_block = _topic_prompt_block(db)
+    language = article_data.get("language", "en")
     try:
         raw_quotes = extract_quotes(
             article_data["text"],
             block,
             topic_block,
             source_type=article_data.get("source_type", "article"),
+            language=language,
         )
     except ExtractionError as e:
         logger.warning("Bulk extraction error for %s: %s", req.url, e)
@@ -334,18 +343,7 @@ def bulk_process_entry(req: BulkEntryRequest, db: Session = Depends(get_db)):
         ]
         return BulkEntryResult(status="error", unmatched_quotes=unmatched, error=str(e))
 
-    extracted = [
-        ExtractedQuote(
-            speaker_name=q.get("speaker_name", "Unknown"),
-            speaker_title=q.get("speaker_title"),
-            speaker_type=q.get("speaker_type"),
-            quote_text=q.get("quote_text", ""),
-            context=q.get("context"),
-            jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
-            topics=_as_jurisdiction_list(q.get("topics")),
-        )
-        for q in raw_quotes
-    ]
+    extracted = [_raw_to_extracted(q) for q in raw_quotes]
     extracted_texts = [eq.quote_text for eq in extracted]
 
     article_meta = ArticleMetadata(
@@ -406,12 +404,14 @@ def auto_ingest(req: AutoIngestRequest, db: Session = Depends(get_db)):
 
     block = _jurisdiction_prompt_block(db)
     topic_block = _topic_prompt_block(db)
+    language = article_data.get("language", "en")
     try:
         raw_quotes = extract_quotes(
             article_data["text"],
             block,
             topic_block,
             source_type=article_data.get("source_type", "article"),
+            language=language,
         )
     except ExtractionError as e:
         logger.warning("Auto-ingest extraction error for %s: %s", req.url, e)
@@ -423,18 +423,7 @@ def auto_ingest(req: AutoIngestRequest, db: Session = Depends(get_db)):
             error="No AI-related quotes found in the article.",
         )
 
-    extracted = [
-        ExtractedQuote(
-            speaker_name=q.get("speaker_name", "Unknown"),
-            speaker_title=q.get("speaker_title"),
-            speaker_type=q.get("speaker_type"),
-            quote_text=q.get("quote_text", ""),
-            context=q.get("context"),
-            jurisdictions=_as_jurisdiction_list(q.get("jurisdictions")),
-            topics=_as_jurisdiction_list(q.get("topics")),
-        )
-        for q in raw_quotes
-    ]
+    extracted = [_raw_to_extracted(q) for q in raw_quotes]
 
     saved = _save_bulk_quotes(
         db,

@@ -43,6 +43,33 @@ PUBLICATION_LOOKUP = {
     "latimes.com": "Los Angeles Times",
     "cnbc.com": "CNBC",
     "ft.com": "Financial Times",
+    # Chinese news outlets (articles, not institutional)
+    "xinhuanet.com": "Xinhua News Agency",
+    "chinadaily.com.cn": "China Daily",
+    "globaltimes.cn": "Global Times",
+    "scmp.com": "South China Morning Post",
+    # Chinese / institutional domains (treated as press_statement sources)
+    "cnaisi.cn": "China AI Safety & Development Association",
+    "cac.gov.cn": "Cyberspace Administration of China",
+    "miit.gov.cn": "Ministry of Industry and Information Technology",
+    "most.gov.cn": "Ministry of Science and Technology",
+    "samr.gov.cn": "State Administration for Market Regulation",
+    "caict.ac.cn": "China Academy of Information and Communications Technology",
+    "cesi.cn": "China Electronics Standardization Institute",
+    "baai.ac.cn": "Beijing Academy of Artificial Intelligence",
+    "aiia.org.cn": "China Artificial Intelligence Industry Alliance",
+}
+
+_INSTITUTIONAL_DOMAINS = {
+    "cnaisi.cn",
+    "cac.gov.cn",
+    "miit.gov.cn",
+    "most.gov.cn",
+    "samr.gov.cn",
+    "caict.ac.cn",
+    "cesi.cn",
+    "baai.ac.cn",
+    "aiia.org.cn",
 }
 
 
@@ -220,7 +247,37 @@ _PRESS_STATEMENT_URL_KEYWORDS = re.compile(
     re.IGNORECASE,
 )
 
-_GOV_DOMAIN_RE = re.compile(r"\.gov(?:\.[a-z]{2})?$|\.mil$", re.IGNORECASE)
+_GOV_DOMAIN_RE = re.compile(
+    r"\.gov(?:\.[a-z]{2})?$|\.mil$|\.gov\.cn$", re.IGNORECASE,
+)
+
+_CN_INSTITUTIONAL_DOMAIN_RE = re.compile(
+    r"\.(?:gov\.cn|org\.cn|ac\.cn|edu\.cn)$", re.IGNORECASE,
+)
+
+_CJK_RE = re.compile(
+    r"[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f\uff00-\uffef"
+    r"\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]"
+)
+
+
+def _detect_language(text: str) -> str:
+    """Lightweight language detection based on CJK character density.
+
+    Returns an ISO 639-1 code: ``"zh"`` for Chinese-dominant text,
+    ``"en"`` otherwise.  Only distinguishes CJK vs non-CJK; future
+    languages can extend this function.
+    """
+    if not text:
+        return "en"
+    sample = text[:2000]
+    cjk_count = len(_CJK_RE.findall(sample))
+    total_non_space = len(sample.replace(" ", "").replace("\n", ""))
+    if total_non_space == 0:
+        return "en"
+    if cjk_count / total_non_space > 0.15:
+        return "zh"
+    return "en"
 
 
 def _detect_press_statement(text: str, title: Optional[str], url: str) -> bool:
@@ -234,6 +291,10 @@ def _detect_press_statement(text: str, title: Optional[str], url: str) -> bool:
     hostname = urlparse(url).hostname or ""
     hostname = hostname.removeprefix("www.")
 
+    if hostname in _INSTITUTIONAL_DOMAINS:
+        return True
+
+    # Known news outlets publish articles, not press statements.
     if hostname in PUBLICATION_LOOKUP:
         return False
 
@@ -241,6 +302,9 @@ def _detect_press_statement(text: str, title: Optional[str], url: str) -> bool:
         quote_chars = text.count('"') + text.count('\u201c') + text.count('\u201d')
         if quote_chars < max(4, len(text) // 500):
             return True
+
+    if _CN_INSTITUTIONAL_DOMAIN_RE.search(hostname) and len(text) > 200:
+        return True
 
     return False
 
@@ -318,12 +382,15 @@ def _fetch_via_jina(url: str) -> dict:
         except ValueError:
             pass
 
+    language = _detect_language(text)
+
     result: dict = {
         "title": title,
         "text": text,
         "publication": _derive_publication(url),
         "published_date": published_date,
         "url": url,
+        "language": language,
     }
 
     if _detect_transcript(text, title, url):
@@ -334,12 +401,39 @@ def _fetch_via_jina(url: str) -> dict:
     return result
 
 
-def _extract_article_from_html(html: str, url: str) -> dict:
+def _detect_charset_from_html(html: str) -> str | None:
+    """Extract charset from HTML meta tags without a full parse."""
+    m = re.search(
+        r'<meta[^>]+charset=["\']?\s*([A-Za-z0-9_-]+)',
+        html[:4096],
+        re.IGNORECASE,
+    )
+    if m:
+        charset = m.group(1).strip().lower()
+        if charset in ("gb2312", "gbk", "gb18030", "big5", "shift_jis", "euc-jp", "euc-kr"):
+            return charset
+    return None
+
+
+def _extract_article_from_html(
+    html: str, url: str, *, raw_bytes: bytes | None = None,
+) -> dict:
     """Parse raw HTML into an article dict (title, text, date, etc.).
 
     Shared by every fetch tier that returns full HTML.  Raises
     ``FetchError`` when the extracted text is too short.
+
+    If *raw_bytes* is provided and the HTML declares a non-UTF-8
+    charset (e.g. GB2312, GBK), the bytes are re-decoded with
+    that charset before parsing.
     """
+    declared_charset = _detect_charset_from_html(html)
+    if declared_charset and raw_bytes:
+        try:
+            html = raw_bytes.decode(declared_charset, errors="replace")
+        except (LookupError, UnicodeDecodeError):
+            pass
+
     soup = BeautifulSoup(html, "html.parser")
 
     title_tag = soup.find("title")
@@ -366,12 +460,15 @@ def _extract_article_from_html(html: str, url: str) -> dict:
             "or require JavaScript rendering."
         )
 
+    language = _detect_language(text)
+
     result: dict = {
         "title": title,
         "text": text,
         "publication": _derive_publication(url),
         "published_date": published_date,
         "url": url,
+        "language": language,
     }
 
     if _detect_transcript(text, title, url):
@@ -387,7 +484,11 @@ def _extract_article_from_html(html: str, url: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def _fetch_html_article_direct(url: str) -> dict:
-    headers = {"User-Agent": _USER_AGENT, "Accept": "text/html,*/*;q=0.8"}
+    headers = {
+        "User-Agent": _USER_AGENT,
+        "Accept": "text/html,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+    }
     try:
         with httpx.Client(timeout=30.0, follow_redirects=True) as client:
             response = client.get(url, headers=headers)
@@ -395,7 +496,7 @@ def _fetch_html_article_direct(url: str) -> dict:
     except httpx.HTTPError as e:
         raise FetchError(f"Failed to fetch article: {e}") from e
 
-    return _extract_article_from_html(response.text, url)
+    return _extract_article_from_html(response.text, url, raw_bytes=response.content)
 
 
 # ---------------------------------------------------------------------------
@@ -407,7 +508,7 @@ _BROWSER_HEADERS = {
         "text/html,application/xhtml+xml,application/xml;"
         "q=0.9,image/webp,*/*;q=0.8"
     ),
-    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
     "Accept-Encoding": "gzip, deflate, br",
     "Cache-Control": "no-cache",
     "Pragma": "no-cache",
@@ -445,7 +546,7 @@ def _fetch_with_browser_tls(url: str) -> dict:
     except Exception as e:
         raise FetchError(f"Browser TLS fetch failed: {e}") from e
 
-    return _extract_article_from_html(response.text, url)
+    return _extract_article_from_html(response.text, url, raw_bytes=response.content)
 
 
 # ---------------------------------------------------------------------------
@@ -480,6 +581,8 @@ def _fetch_via_google_cache(url: str) -> dict:
 
     html = response.text
 
+    raw_bytes = response.content
+
     # Google Cache wraps content in its own chrome — strip the header div
     # so our article extractor finds the real <article>/<main> tags.
     soup = BeautifulSoup(html, "html.parser")
@@ -487,7 +590,7 @@ def _fetch_via_google_cache(url: str) -> dict:
         div.decompose()
     html = str(soup)
 
-    return _extract_article_from_html(html, url)
+    return _extract_article_from_html(html, url, raw_bytes=raw_bytes)
 
 
 # ---------------------------------------------------------------------------

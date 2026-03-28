@@ -82,6 +82,7 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
         qd = {
             "id": q.id,
             "quote_text": q.quote_text,
+            "original_text": q.original_text,
             "context": q.context,
             "date_said": q.date_said.isoformat() if q.date_said else None,
             "date_recorded": q.date_recorded.isoformat() if q.date_recorded else None,
