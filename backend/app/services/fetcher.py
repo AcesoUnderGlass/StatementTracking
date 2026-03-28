@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 import re
 from datetime import date
 from typing import Optional
@@ -211,7 +212,11 @@ _PRESS_STATEMENT_URL_KEYWORDS = re.compile(
     r"|white[-_ ]?paper|whitepaper"
     r"|open[-_ ]?letter|letter[-_ ]?to[-_ ]"
     r"|/(?:statements?|press[-_ ]?releases?"
-    r"|announcements?|presidential[-_ ]?actions?)(?:/|$)",
+    r"|announcements?|presidential[-_ ]?actions?"
+    r"|insights?/alerts?|alerts?/\d"
+    r"|advisori(?:es|y)|client[-_ ]?(?:alerts?|updates?)"
+    r"|publications?/[^?#]"
+    r")(?:/|$)",
     re.IGNORECASE,
 )
 
@@ -267,7 +272,69 @@ def _detect_transcript(text: str, title: Optional[str], url: str) -> bool:
     return False
 
 
-def _fetch_html_article(url: str) -> dict:
+def _fetch_via_jina(url: str) -> dict:
+    """Fetch article content via the Jina Reader API (r.jina.ai).
+
+    Used as a fallback when the direct httpx fetch fails — Jina renders
+    JavaScript and bypasses many anti-bot protections.
+    """
+    jina_url = f"https://r.jina.ai/{url}"
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "User-Agent": _USER_AGENT,
+    }
+    api_key = os.environ.get("JINA_API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    try:
+        with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+            response = client.get(jina_url, headers=headers)
+            response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise FetchError(f"Jina Reader fallback failed: {e}") from e
+
+    try:
+        body = response.json()
+    except Exception as e:
+        raise FetchError(f"Jina Reader returned non-JSON response: {e}") from e
+
+    data = body.get("data") or {}
+    text = (data.get("content") or "").strip()
+
+    if not text or len(text) < 100:
+        raise FetchError(
+            "Jina Reader returned too little content — the page may be "
+            "login-gated or otherwise inaccessible."
+        )
+
+    title = data.get("title") or None
+
+    published_date: date | None = None
+    raw_date = data.get("publishedTime") or ""
+    if raw_date:
+        try:
+            published_date = date.fromisoformat(raw_date[:10])
+        except ValueError:
+            pass
+
+    result: dict = {
+        "title": title,
+        "text": text,
+        "publication": _derive_publication(url),
+        "published_date": published_date,
+        "url": url,
+    }
+
+    if _detect_transcript(text, title, url):
+        result["source_type"] = "page_transcript"
+    elif _detect_press_statement(text, title, url):
+        result["source_type"] = "press_statement"
+
+    return result
+
+
+def _fetch_html_article_direct(url: str) -> dict:
     headers = {"User-Agent": _USER_AGENT, "Accept": "text/html,*/*;q=0.8"}
     try:
         with httpx.Client(timeout=30.0, follow_redirects=True) as client:
@@ -316,6 +383,17 @@ def _fetch_html_article(url: str) -> dict:
         result["source_type"] = "press_statement"
 
     return result
+
+
+def _fetch_html_article(url: str) -> dict:
+    try:
+        return _fetch_html_article_direct(url)
+    except FetchError as orig:
+        logger.info("Direct fetch failed for %s, trying Jina Reader fallback", url)
+        try:
+            return _fetch_via_jina(url)
+        except FetchError:
+            raise orig
 
 
 def _is_youtube_url(url: str) -> bool:
