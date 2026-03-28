@@ -1,7 +1,12 @@
 import type { QuoteWithDetails } from '../../types';
 
 const EditorialCardTagsColumn = ({quote}:{quote: QuoteWithDetails}) => {
-  const partyTagStyle = { background: '#e5f0ea', color: '#2a6e45', border: '1px solid #c0dcc8' };
+  const partyName = quote.person?.party?.toLowerCase() ?? '';
+  const partyTagStyle = partyName.includes('republican')
+    ? { background: '#ffffff', color: '#991b1b', border: '1px solid #991b1b' }
+    : partyName.includes('democrat')
+    ? { background: '#ffffff', color: '#1565c0', border: '1px solid #1565c0' }
+    : { background: '#ffffff', color: '#5c6b31', border: '1px solid #5c6b31' };
 
   return (
     <div

@@ -36,7 +36,11 @@ const EditorialCard = ({
     enabled: !!quote.duplicate_of_id,
   });
   const partyName = quote.person?.party?.toLowerCase() ?? '';
-  const partyTagStyle = { background: '#e5f0ea', color: '#2a6e45', border: '1px solid #c0dcc8' };
+  const partyTagStyle = partyName.includes('republican')
+    ? { background: '#c62828', color: '#ffffff', border: '1px solid #b71c1c' }
+    : partyName.includes('democrat')
+    ? { background: '#1565c0', color: '#ffffff', border: '1px solid #0d47a1' }
+    : { background: '#e5f0ea', color: '#2a6e45', border: '1px solid #c0dcc8' };
 
   return (
     <div
