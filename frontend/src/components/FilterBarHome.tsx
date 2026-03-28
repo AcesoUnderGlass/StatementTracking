@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useState } from 'react';
 import { Filter as FilterIcon } from 'lucide-react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
 import { FILTER_BAR_NO_TOPICS_MESSAGE } from './FilterBar';
+import SearchableMultiSelect from './SearchableMultiSelect';
 
 interface Props {
   filters: QuoteFilters;
@@ -14,32 +15,11 @@ interface Props {
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 
 export default function FilterBarHome({ filters, onChange, jurisdictions, topics }: Props) {
-  const jurRef = useRef<HTMLDetailsElement>(null);
-  const topicRef = useRef<HTMLDetailsElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  useEffect(() => {
-    function handleClick(e: globalThis.MouseEvent) {
-      if (jurRef.current?.open && !jurRef.current.contains(e.target as Node)) {
-        jurRef.current.open = false;
-      }
-      if (topicRef.current?.open && !topicRef.current.contains(e.target as Node)) {
-        topicRef.current.open = false;
-      }
-    }
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, []);
 
   function update(field: keyof QuoteFilters, value: string) {
     onChange({ ...filters, [field]: value || undefined, page: 1 });
   }
-
-  const selectedIds = filters.jurisdiction_ids ?? [];
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-
-  const selectedTopicIds = filters.topic_ids ?? [];
-  const selectedTopicSet = useMemo(() => new Set(selectedTopicIds), [selectedTopicIds]);
 
   function toggleJurisdiction(id: number) {
     const cur = filters.jurisdiction_ids ?? [];
@@ -59,18 +39,6 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
       topic_ids: next.length ? next : undefined,
       page: 1,
     });
-  }
-
-  function clearAllJurisdictions(e: MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    onChange({ ...filters, jurisdiction_ids: undefined, page: 1 });
-  }
-
-  function clearAllTopics(e: MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    onChange({ ...filters, topic_ids: undefined, page: 1 });
   }
 
   const hasFilters = Object.entries(filters).some(([k, v]) => {
@@ -160,122 +128,33 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
             <option value="gov_inst">Gov. Institution</option>
           </select>
 
-          <details ref={jurRef} className="relative">
-            <summary
-              className="flex min-w-[11rem] max-w-[14rem] cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-details-marker]:hidden select-none"
-              title="Select one or more jurisdictions (quotes matching any)"
-            >
-              <span>
-                Jurisdictions
-                {selectedIds.length > 0 && (
-                  <span className="ml-1.5 text-xs font-medium text-blue-600 tabular-nums">
-                    ({selectedIds.length})
-                  </span>
-                )}
-              </span>
-              <span className="text-slate-400 text-[10px] shrink-0" aria-hidden>
-                ▾
-              </span>
-            </summary>
-            <div
-              className="absolute left-0 top-full z-30 mt-1 w-80 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-2 shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {jurisdictions.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-slate-500">No jurisdictions loaded.</p>
-              ) : (
-                <>
-                  {selectedIds.length > 0 && (
-                    <div className="flex justify-end border-b border-slate-100 px-2 pb-2 mb-1">
-                      <button
-                        type="button"
-                        onClick={clearAllJurisdictions}
-                        className="text-xs font-medium text-slate-500 hover:text-slate-800 underline underline-offset-2"
-                      >
-                        Clear all
-                      </button>
-                    </div>
-                  )}
-                <ul className="space-y-0.5">
-                  {jurisdictions.map((j) => (
-                    <li key={j.id}>
-                      <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-                        <input
-                          type="checkbox"
-                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          checked={selectedSet.has(j.id)}
-                          onChange={() => toggleJurisdiction(j.id)}
-                        />
-                        <span className="min-w-0 flex-1">
-                          {j.name}
-                          {j.abbreviation ? (
-                            <span className="text-slate-400"> ({j.abbreviation})</span>
-                          ) : null}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-                </>
-              )}
-            </div>
-          </details>
+          <SearchableMultiSelect
+            label="Jurisdictions"
+            items={jurisdictions}
+            selectedIds={filters.jurisdiction_ids ?? []}
+            onToggle={toggleJurisdiction}
+            onClearAll={() => onChange({ ...filters, jurisdiction_ids: undefined, page: 1 })}
+            emptyMessage="No jurisdictions loaded."
+            searchPlaceholder="Search jurisdictions…"
+            panelWidth="w-80"
+            summaryMinWidth="min-w-[11rem]"
+            summaryMaxWidth="max-w-[14rem]"
+            title="Select one or more jurisdictions (quotes matching any)"
+          />
 
-          <details ref={topicRef} className="relative">
-            <summary
-              className="flex min-w-[8rem] max-w-[12rem] cursor-pointer list-none items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-details-marker]:hidden select-none"
-              title="Select one or more topics (quotes matching any)"
-            >
-              <span>
-                Topics
-                {selectedTopicIds.length > 0 && (
-                  <span className="ml-1.5 text-xs font-medium text-blue-600 tabular-nums">
-                    ({selectedTopicIds.length})
-                  </span>
-                )}
-              </span>
-              <span className="text-slate-400 text-[10px] shrink-0" aria-hidden>
-                ▾
-              </span>
-            </summary>
-            <div
-              className="absolute left-0 top-full z-30 mt-1 w-56 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-2 shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {topics.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-slate-500">{FILTER_BAR_NO_TOPICS_MESSAGE}</p>
-              ) : (
-                <>
-                  {selectedTopicIds.length > 0 && (
-                    <div className="flex justify-end border-b border-slate-100 px-2 pb-2 mb-1">
-                      <button
-                        type="button"
-                        onClick={clearAllTopics}
-                        className="text-xs font-medium text-slate-500 hover:text-slate-800 underline underline-offset-2"
-                      >
-                        Clear all
-                      </button>
-                    </div>
-                  )}
-                  <ul className="space-y-0.5">
-                    {topics.map((t) => (
-                      <li key={t.id}>
-                        <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-                          <input
-                            type="checkbox"
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            checked={selectedTopicSet.has(t.id)}
-                            onChange={() => toggleTopic(t.id)}
-                          />
-                          <span className="min-w-0 flex-1">{t.name}</span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          </details>
+          <SearchableMultiSelect
+            label="Topics"
+            items={topics}
+            selectedIds={filters.topic_ids ?? []}
+            onToggle={toggleTopic}
+            onClearAll={() => onChange({ ...filters, topic_ids: undefined, page: 1 })}
+            emptyMessage={FILTER_BAR_NO_TOPICS_MESSAGE}
+            searchPlaceholder="Search topics…"
+            panelWidth="w-56"
+            summaryMinWidth="min-w-[8rem]"
+            summaryMaxWidth="max-w-[12rem]"
+            title="Select one or more topics (quotes matching any)"
+          />
 
           <div className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/50 px-2.5 py-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 shrink-0">Spoken</span>
