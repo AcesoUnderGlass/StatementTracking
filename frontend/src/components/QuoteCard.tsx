@@ -9,6 +9,7 @@ export interface QuoteCardData {
   speaker_title: string | null;
   speaker_type: SpeakerType | null;
   quote_text: string;
+  original_text: string | null;
   context: string | null;
   jurisdiction_names: string[];
   topic_names: string[];
@@ -48,6 +49,7 @@ export default function QuoteCard({
 }: Props) {
   const isDup = !!data.duplicate_match;
   const [inferring, setInferring] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   async function handleSuggestTags() {
     if (!data.quote_text.trim()) return;
@@ -227,7 +229,7 @@ export default function QuoteCard({
       <div className="space-y-3">
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">
-            Quote
+            Quote {data.original_text ? '(translated)' : ''}
           </label>
           <textarea
             value={data.quote_text}
@@ -236,6 +238,31 @@ export default function QuoteCard({
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
           />
         </div>
+
+        {data.original_text && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowOriginal(!showOriginal)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors mb-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-3 w-3 transition-transform ${showOriginal ? 'rotate-90' : ''}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+              Original text
+            </button>
+            {showOriginal && (
+              <div className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed">
+                {data.original_text}
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">

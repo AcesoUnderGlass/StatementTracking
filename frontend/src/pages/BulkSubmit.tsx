@@ -164,6 +164,7 @@ function ReviewPanel({
       speaker_title: q.speaker_title,
       speaker_type: q.speaker_type || 'elected',
       quote_text: q.quote_text,
+      original_text: q.original_text || null,
       context: q.context,
       jurisdiction_names: q.jurisdictions ?? [],
       topic_names: q.topics ?? [],

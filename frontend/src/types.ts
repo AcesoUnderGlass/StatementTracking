@@ -41,6 +41,7 @@ export interface ExtractedQuote {
   speaker_title: string | null;
   speaker_type: SpeakerType | null;
   quote_text: string;
+  original_text?: string | null;
   context: string | null;
   jurisdictions: string[];
   topics: string[];
@@ -56,6 +57,7 @@ export interface ExtractResponse {
 
 export interface QuoteSaveItem {
   quote_text: string;
+  original_text?: string | null;
   context?: string | null;
   date_said?: string | null;
   person_id?: number | null;
@@ -108,6 +110,7 @@ export interface TopicRow {
 export interface QuoteWithDetails {
   id: number;
   quote_text: string;
+  original_text?: string | null;
   context: string | null;
   date_said: string | null;
   date_recorded: string | null;
@@ -161,6 +164,7 @@ export interface PersonDetail extends Person {
   quotes: {
     id: number;
     quote_text: string;
+    original_text?: string | null;
     context: string | null;
     date_said: string | null;
     date_recorded: string | null;
@@ -177,6 +181,7 @@ export interface PersonDetail extends Person {
 export interface PendingQuote {
   id: number;
   quote_text: string;
+  original_text?: string | null;
   context: string | null;
   date_said: string | null;
   date_recorded: string | null;

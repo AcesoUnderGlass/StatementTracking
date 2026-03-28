@@ -46,6 +46,7 @@ function QuoteCard({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(quote.quote_text);
   const [editContext, setEditContext] = useState(quote.context || '');
+  const [showOriginal, setShowOriginal] = useState(false);
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
@@ -143,6 +144,30 @@ function QuoteCard({
           <blockquote className="text-sm text-slate-700 leading-relaxed pl-3 border-l-2 border-slate-300">
             {quote.quote_text}
           </blockquote>
+          {quote.original_text && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setShowOriginal(!showOriginal)}
+                className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-3 w-3 transition-transform ${showOriginal ? 'rotate-90' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                Original text
+              </button>
+              {showOriginal && (
+                <blockquote className="mt-1 text-sm text-slate-600 leading-relaxed pl-3 border-l-2 border-slate-200 bg-slate-50 rounded-r-lg py-1.5 pr-2">
+                  {quote.original_text}
+                </blockquote>
+              )}
+            </div>
+          )}
           {quote.context && (
             <p className="text-xs text-slate-500 mt-2 italic">{quote.context}</p>
           )}
@@ -173,6 +198,7 @@ function blankQuoteCard(): QuoteCardData {
     speaker_title: null,
     speaker_type: 'elected',
     quote_text: '',
+    original_text: null,
     context: null,
     jurisdiction_names: [],
     topic_names: [],

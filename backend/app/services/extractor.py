@@ -40,10 +40,16 @@ ARTICLE_SYSTEM_PROMPT = (
     "A quote may have more than one topic. Only create a new topic tag if absolutely "
     "nothing in the canonical list fits; never create synonyms of existing tags. "
     "Return topics as an array of tag name strings. "
+    "MULTILINGUAL HANDLING: If the source text is in a language other than English, "
+    "provide an English translation of each quote as quote_text, and include the "
+    "original-language text in original_quote_text. For speaker names in non-Latin "
+    "scripts, provide the romanized form in speaker_name and add the original script "
+    "form in parentheses (e.g. 'Zhang Wei (张伟)'). Write the context field in English. "
+    "If the source is already in English, set original_quote_text to null. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[], "topics": string[] }] }'
+    '"speaker_type": string, "quote_text": string, "original_quote_text": string | null, '
+    '"context": string, "jurisdictions": string[], "topics": string[] }] }'
 )
 
 TRANSCRIPT_SYSTEM_PROMPT = (
@@ -82,10 +88,16 @@ TRANSCRIPT_SYSTEM_PROMPT = (
     "A quote may have more than one topic. Only create a new topic tag if absolutely "
     "nothing in the canonical list fits; never create synonyms of existing tags. "
     "Return topics as an array of tag name strings. "
+    "MULTILINGUAL HANDLING: If the source text is in a language other than English, "
+    "provide an English translation of each quote as quote_text, and include the "
+    "original-language text in original_quote_text. For speaker names in non-Latin "
+    "scripts, provide the romanized form in speaker_name and add the original script "
+    "form in parentheses (e.g. 'Zhang Wei (张伟)'). Write the context field in English. "
+    "If the source is already in English, set original_quote_text to null. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[], "topics": string[] }] }'
+    '"speaker_type": string, "quote_text": string, "original_quote_text": string | null, '
+    '"context": string, "jurisdictions": string[], "topics": string[] }] }'
 )
 
 PAGE_TRANSCRIPT_SYSTEM_PROMPT = (
@@ -128,10 +140,16 @@ PAGE_TRANSCRIPT_SYSTEM_PROMPT = (
     "A quote may have more than one topic. Only create a new topic tag if absolutely "
     "nothing in the canonical list fits; never create synonyms of existing tags. "
     "Return topics as an array of tag name strings. "
+    "MULTILINGUAL HANDLING: If the source text is in a language other than English, "
+    "provide an English translation of each quote as quote_text, and include the "
+    "original-language text in original_quote_text. For speaker names in non-Latin "
+    "scripts, provide the romanized form in speaker_name and add the original script "
+    "form in parentheses (e.g. 'Zhang Wei (张伟)'). Write the context field in English. "
+    "If the source is already in English, set original_quote_text to null. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[], "topics": string[] }] }'
+    '"speaker_type": string, "quote_text": string, "original_quote_text": string | null, '
+    '"context": string, "jurisdictions": string[], "topics": string[] }] }'
 )
 
 PRESS_STATEMENT_SYSTEM_PROMPT = (
@@ -173,10 +191,16 @@ PRESS_STATEMENT_SYSTEM_PROMPT = (
     "A quote may have more than one topic. Only create a new topic tag if absolutely "
     "nothing in the canonical list fits; never create synonyms of existing tags. "
     "Return topics as an array of tag name strings. "
+    "MULTILINGUAL HANDLING: If the source text is in a language other than English, "
+    "provide an English translation of each quote as quote_text, and include the "
+    "original-language text in original_quote_text. For speaker names in non-Latin "
+    "scripts, provide the romanized form in speaker_name and add the original script "
+    "form in parentheses (e.g. 'Zhang Wei (张伟)'). Write the context field in English. "
+    "If the source is already in English, set original_quote_text to null. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[], "topics": string[] }] }'
+    '"speaker_type": string, "quote_text": string, "original_quote_text": string | null, '
+    '"context": string, "jurisdictions": string[], "topics": string[] }] }'
 )
 
 TWEET_SYSTEM_PROMPT = (
@@ -208,10 +232,16 @@ TWEET_SYSTEM_PROMPT = (
     "A quote may have more than one topic. Only create a new topic tag if absolutely "
     "nothing in the canonical list fits; never create synonyms of existing tags. "
     "Return topics as an array of tag name strings. "
+    "MULTILINGUAL HANDLING: If the source text is in a language other than English, "
+    "provide an English translation of each quote as quote_text, and include the "
+    "original-language text in original_quote_text. For speaker names in non-Latin "
+    "scripts, provide the romanized form in speaker_name and add the original script "
+    "form in parentheses (e.g. 'Zhang Wei (张伟)'). Write the context field in English. "
+    "If the source is already in English, set original_quote_text to null. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[], "topics": string[] }] }'
+    '"speaker_type": string, "quote_text": string, "original_quote_text": string | null, '
+    '"context": string, "jurisdictions": string[], "topics": string[] }] }'
 )
 
 SOCIAL_POST_SYSTEM_PROMPT = (
@@ -243,10 +273,16 @@ SOCIAL_POST_SYSTEM_PROMPT = (
     "A quote may have more than one topic. Only create a new topic tag if absolutely "
     "nothing in the canonical list fits; never create synonyms of existing tags. "
     "Return topics as an array of tag name strings. "
+    "MULTILINGUAL HANDLING: If the source text is in a language other than English, "
+    "provide an English translation of each quote as quote_text, and include the "
+    "original-language text in original_quote_text. For speaker names in non-Latin "
+    "scripts, provide the romanized form in speaker_name and add the original script "
+    "form in parentheses (e.g. 'Zhang Wei (张伟)'). Write the context field in English. "
+    "If the source is already in English, set original_quote_text to null. "
     "Return a JSON object only, no other "
     'text. Schema: { "quotes": [{ "speaker_name": string, "speaker_title": string, '
-    '"speaker_type": string, "quote_text": string, "context": string, '
-    '"jurisdictions": string[], "topics": string[] }] }'
+    '"speaker_type": string, "quote_text": string, "original_quote_text": string | null, '
+    '"context": string, "jurisdictions": string[], "topics": string[] }] }'
 )
 
 SYSTEM_PROMPT = ARTICLE_SYSTEM_PROMPT
@@ -256,11 +292,19 @@ class ExtractionError(Exception):
     pass
 
 
+_LANGUAGE_NAMES = {
+    "zh": "Chinese",
+    "ja": "Japanese",
+    "ko": "Korean",
+}
+
+
 def extract_quotes(
     article_text: str,
     canonical_jurisdiction_list: str,
     canonical_topic_list: str = "",
     source_type: str = "article",
+    language: str = "en",
 ) -> List[dict]:
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -307,6 +351,15 @@ def extract_quotes(
             "Extract all direct AI-related quotes from the following article:"
         )
 
+    language_note = ""
+    if language and language != "en":
+        lang_name = _LANGUAGE_NAMES.get(language, language)
+        language_note = (
+            f"NOTE: The following content is in {lang_name}. Extract quotes "
+            "in the original language as original_quote_text and provide "
+            "accurate English translations as quote_text.\n\n"
+        )
+
     try:
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
@@ -323,6 +376,7 @@ def extract_quotes(
                         "Canonical topic tag names (strongly prefer tags from this list; "
                         "only create a new tag if nothing fits):\n\n"
                         f"{canonical_topic_list}\n\n"
+                        f"{language_note}"
                         f"{extract_instruction}\n\n"
                         f"{article_text}"
                     ),
