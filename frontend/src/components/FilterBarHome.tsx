@@ -53,18 +53,18 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 shrink-0">Sort</span>
           <select
-            value={filters.sort_by || ''}
+            value={filters.sort_by || 'created_at'}
             onChange={(e) =>
               onChange({
                 ...filters,
-                sort_by: (e.target.value || undefined) as QuoteFilters['sort_by'],
-                sort_dir: e.target.value ? (filters.sort_dir || 'desc') : undefined,
+                sort_by: e.target.value as QuoteFilters['sort_by'],
+                sort_dir: filters.sort_dir || 'desc',
                 page: 1,
               })
             }
             className="px-3 py-2 border border-slate-200 rounded text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Date Added</option>
+            <option value="created_at">Date Added</option>
             <option value="date_said">Date Spoken</option>
             <option value="speaker">Speaker</option>
           </select>
