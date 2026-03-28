@@ -1,13 +1,19 @@
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 
-const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick}:{quote: QuoteWithDetails, onTagClick?: (category: FilterTagCategory, name: string) => void, onDateClick?: (date: string) => void}) => {
+const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick, showPerson = true}:{quote: QuoteWithDetails, onTagClick?: (category: FilterTagCategory, name: string) => void, onDateClick?: (date: string) => void, showPerson?: boolean}) => {
   const dateSaidFormatted = quote.date_said
     ? (() => { const [y, m, d] = quote.date_said.split('-'); return `${d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(m) - 1]} ${y}`; })()
     : null;
 
+  if (!showPerson) {
+    return (
+      <div className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4" />
+    );
+  }
+
   return (
     <div
-      className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4 shadow-sm max-md:shadow-none"
+      className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4"
     >
       <div className="min-w-0" style={{ fontFamily: 'Playfair Display, serif' }}>
         {quote.person ? (

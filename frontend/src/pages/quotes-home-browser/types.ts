@@ -46,4 +46,5 @@ export interface QuoteItemProps {
   onViewOriginal: (id: number) => void;
   onTagClick?: (category: FilterTagCategory, name: string) => void;
   onDateClick?: (date: string) => void;
+  showPerson?: boolean;
 }

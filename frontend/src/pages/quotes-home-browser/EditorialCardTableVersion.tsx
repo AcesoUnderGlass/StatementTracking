@@ -22,14 +22,16 @@ const EditorialCardThreeColumns = ({
   onViewOriginal,
   onTagClick,
   onDateClick,
+  showPerson = true,
 }: QuoteItemProps) => {
+  const borderClass = index === 0 ? '' : showPerson ? 'border-t border-slate-300' : 'border-t border-slate-300/10';
   return (
     <div
       onClick={onToggle}
-      className={`grid min-w-0 grid-cols-1 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] border-b border-slate-300 group${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
+      className={`grid min-w-0 grid-cols-1 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] ${borderClass} group${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
       style={{ animation: `fadeInUp 0.4s ease-out ${index * 50}ms both` }}
     >
-      <EditorialCardPersonColumn quote={quote} onTagClick={onTagClick} onDateClick={onDateClick} />
+      <EditorialCardPersonColumn quote={quote} onTagClick={onTagClick} onDateClick={onDateClick} showPerson={showPerson} />
       <EditorialCardQuoteColumn quote={quote} />
       <EditorialCardTagsColumn quote={quote} onTagClick={onTagClick} />
       <EditorialCardDetailsColumn
