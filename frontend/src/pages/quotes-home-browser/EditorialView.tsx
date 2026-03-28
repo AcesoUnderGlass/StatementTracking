@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import FilterBarHome from '../../components/FilterBarHome';
 import EditorialCardTableVersion from './EditorialCardTableVersion';
 import type { ViewProps } from './types';
@@ -22,6 +23,12 @@ const EditorialView = ({
   onDelete,
   totalPages,
 }: ViewProps) => {
+  const listTopRef = useRef<HTMLDivElement>(null);
+
+  function scrollListToTop() {
+    listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   return (
     <div
       className="-mx-12 -my-8 px-12 py-8 min-h-screen"
@@ -70,7 +77,10 @@ const EditorialView = ({
         </div>
       ) : (
         <>
-          <div className="max-w-12xl mx-auto">
+          <div
+            ref={listTopRef}
+            className="max-w-12xl mx-auto scroll-mt-24"
+          >
             {data?.quotes.map((q, i) => (
               <EditorialCardTableVersion
                 key={q.id}
@@ -107,9 +117,10 @@ const EditorialView = ({
             >
               <button
                 disabled={(filters.page || 1) <= 1}
-                onClick={() =>
-                  setFilters({ ...filters, page: (filters.page || 1) - 1 })
-                }
+                onClick={() => {
+                  setFilters({ ...filters, page: (filters.page || 1) - 1 });
+                  scrollListToTop();
+                }}
                 className="px-4 py-2 transition disabled:opacity-30 hover:opacity-70"
                 style={{ borderBottom: '1px solid #c9a84c' }}
               >
@@ -123,9 +134,10 @@ const EditorialView = ({
               </span>
               <button
                 disabled={(filters.page || 1) >= totalPages}
-                onClick={() =>
-                  setFilters({ ...filters, page: (filters.page || 1) + 1 })
-                }
+                onClick={() => {
+                  setFilters({ ...filters, page: (filters.page || 1) + 1 });
+                  scrollListToTop();
+                }}
                 className="px-4 py-2 transition disabled:opacity-30 hover:opacity-70"
                 style={{ borderBottom: '1px solid #c9a84c' }}
               >
