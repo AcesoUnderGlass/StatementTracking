@@ -242,6 +242,24 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
             <span className="text-sm text-slate-600">Show duplicates</span>
           </label>
 
+          <label className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={filters.include_unapproved || false}
+              onChange={(e) => {
+                const on = e.target.checked;
+                onChange({
+                  ...filters,
+                  include_unapproved: on || undefined,
+                  sort_by: on ? 'created_at' : filters.sort_by,
+                  page: 1,
+                });
+              }}
+              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-slate-600">Show unapproved</span>
+          </label>
+
           {hasFilters && (
             <button
               type="button"

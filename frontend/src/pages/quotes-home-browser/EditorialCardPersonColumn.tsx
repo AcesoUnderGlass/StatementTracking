@@ -1,13 +1,19 @@
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 
-const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick}:{quote: QuoteWithDetails, onTagClick?: (category: FilterTagCategory, name: string) => void, onDateClick?: (date: string) => void}) => {
+const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick, showPerson = true}:{quote: QuoteWithDetails, onTagClick?: (category: FilterTagCategory, name: string) => void, onDateClick?: (date: string) => void, showPerson?: boolean}) => {
   const dateSaidFormatted = quote.date_said
     ? (() => { const [y, m, d] = quote.date_said.split('-'); return `${d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(m) - 1]} ${y}`; })()
     : null;
 
+  if (!showPerson) {
+    return (
+      <div className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4" />
+    );
+  }
+
   return (
     <div
-      className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4 shadow-sm max-md:shadow-none"
+      className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4"
     >
       <div className="min-w-0" style={{ fontFamily: 'Playfair Display, serif' }}>
         {quote.person ? (
@@ -26,14 +32,12 @@ const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick}:{quote: Quot
             {quote.person.role}
           </p>
         )}
-        {dateSaidFormatted && (
-          <p
-            className="text-xs mt-[6px] opacity-50 font-sans cursor-pointer hover:opacity-80"
-            onClick={(e) => { e.stopPropagation(); onDateClick?.(quote.date_said!); }}
-          >
-            {dateSaidFormatted}
-          </p>
-        )}
+        <p
+          className={`text-xs mt-[6px] opacity-50 font-sans${dateSaidFormatted ? ' cursor-pointer hover:opacity-80' : ''}`}
+          onClick={dateSaidFormatted ? (e) => { e.stopPropagation(); onDateClick?.(quote.date_said!); } : undefined}
+        >
+          {dateSaidFormatted || 'Date Unknown'}
+        </p>
       </div>
     </div>
   );

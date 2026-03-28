@@ -101,27 +101,32 @@ const EditorialView = ({
             ref={listTopRef}
             className="max-w-12xl mx-auto scroll-mt-24"
           >
-            {data?.quotes.map((q, i) => (
-              <EditorialCardTableVersion
-                key={q.id}
-                quote={q}
-                index={i}
-                isSortingByAddedDate={!filters.sort_by || filters.sort_by === 'created_at'}
-                isEditing={editing === q.id}
-                editForm={editForm}
-                setEditForm={setEditForm}
-                jurisdictionOptions={jurisdictionOptions}
-                topicOptions={topicOptions}
-                onToggle={() => setExpanded(expanded === q.id ? null : q.id)}
-                onStartEdit={() => startEdit(q)}
-                onCancelEdit={cancelEdit}
-                onSaveEdit={() => saveEdit(q.id)}
-                onDelete={() => onDelete(q.id)}
-                onViewOriginal={(id) => setExpanded(id)}
-                onTagClick={handleTagClick}
-                onDateClick={handleDateClick}
-              />
-            ))}
+            {data?.quotes.map((q, i) => {
+              const prevPerson = i > 0 ? data.quotes[i - 1].person : null;
+              const showPerson = i === 0 || q.person?.id !== prevPerson?.id;
+              return (
+                <EditorialCardTableVersion
+                  key={q.id}
+                  quote={q}
+                  index={i}
+                  showPerson={showPerson}
+                  isSortingByAddedDate={!filters.sort_by || filters.sort_by === 'created_at'}
+                  isEditing={editing === q.id}
+                  editForm={editForm}
+                  setEditForm={setEditForm}
+                  jurisdictionOptions={jurisdictionOptions}
+                  topicOptions={topicOptions}
+                  onToggle={() => setExpanded(expanded === q.id ? null : q.id)}
+                  onStartEdit={() => startEdit(q)}
+                  onCancelEdit={cancelEdit}
+                  onSaveEdit={() => saveEdit(q.id)}
+                  onDelete={() => onDelete(q.id)}
+                  onViewOriginal={(id) => setExpanded(id)}
+                  onTagClick={handleTagClick}
+                  onDateClick={handleDateClick}
+                />
+              );
+            })}
             {data?.quotes.length === 0 && (
               <div
                 className="text-center py-16"
