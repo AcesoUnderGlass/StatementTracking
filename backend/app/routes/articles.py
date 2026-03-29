@@ -35,6 +35,7 @@ from ..services.fetcher import fetch_article, FetchError
 from ..services.extractor import extract_quotes, ExtractionError
 from ..services.dedup import find_duplicate, check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
+from ..services.speaker_aliases import canonical_speaker_name
 from ..services.topic_quote import set_quote_topics
 
 logger = logging.getLogger(__name__)
@@ -144,7 +145,8 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
         if q.person_id:
             person_id = q.person_id
         elif q.new_person:
-            name_key = q.new_person.name.strip().lower()
+            display_name = canonical_speaker_name(q.new_person.name)
+            name_key = display_name.lower()
             if name_key in created_people:
                 person_id = created_people[name_key]
             else:
@@ -155,7 +157,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
                     person_id = existing_person.id
                 else:
                     person = Person(
-                        name=q.new_person.name,
+                        name=display_name,
                         type=SpeakerType(q.new_person.type),
                         party=Party(q.new_person.party) if q.new_person.party else None,
                         role=q.new_person.role,
@@ -229,6 +231,7 @@ _VALID_SPEAKER_TYPES = {t.value for t in SpeakerType}
 def _resolve_person(db: Session, name: str, speaker_type: str | None, cache: dict[str, int]) -> int:
     """Look up a Person by name or create one. Uses *cache* to avoid
     redundant DB hits within a single request."""
+    name = canonical_speaker_name(name)
     name_key = name.strip().lower()
     if name_key in cache:
         return cache[name_key]
@@ -552,7 +555,8 @@ def add_quote_to_article(
     if req.person_id:
         person_id = req.person_id
     else:
-        name_key = req.new_person.name.strip().lower()
+        display_name = canonical_speaker_name(req.new_person.name)
+        name_key = display_name.lower()
         existing_person = db.query(Person).filter(
             Person.name.ilike(name_key)
         ).first()
@@ -560,7 +564,7 @@ def add_quote_to_article(
             person_id = existing_person.id
         else:
             person = Person(
-                name=req.new_person.name,
+                name=display_name,
                 type=SpeakerType(req.new_person.type),
                 party=Party(req.new_person.party) if req.new_person.party else None,
                 role=req.new_person.role,
