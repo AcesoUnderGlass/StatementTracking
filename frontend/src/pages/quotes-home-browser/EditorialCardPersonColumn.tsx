@@ -1,20 +1,30 @@
+import { ChevronDown } from 'lucide-react';
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 
-const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick, showPerson = true}:{quote: QuoteWithDetails, onTagClick?: (category: FilterTagCategory, name: string) => void, onDateClick?: (date: string) => void, showPerson?: boolean}) => {
+const EditorialCardPersonColumn = ({quote, onTagClick, onDateClick, onCollapse, showPerson = true}:{quote: QuoteWithDetails, onTagClick?: (category: FilterTagCategory, name: string) => void, onDateClick?: (date: string) => void, onCollapse?: () => void, showPerson?: boolean}) => {
   const dateSaidFormatted = quote.date_said
     ? (() => { const [y, m, d] = quote.date_said.split('-'); return `${d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(m) - 1]} ${y}`; })()
     : null;
 
   if (!showPerson) {
     return (
-      <div className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4" />
+      <div className="bg-white flex flex-col justify-center px-3 pt-5 pb-5 md:px-4" />
     );
   }
 
   return (
     <div
-      className="bg-white transition-all duration-300 flex flex-col justify-center px-3 pt-5 pb-5 md:px-4"
+      className="bg-white flex items-center px-3 pt-5 pb-5 md:px-4"
     >
+      {onCollapse && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCollapse(); }}
+          className="-ml-2 pr-2 text-slate-400 hover:text-slate-700 cursor-pointer shrink-0 flex items-center"
+        >
+          <ChevronDown size={14} />
+        </button>
+      )}
       <div className="min-w-0" style={{ fontFamily: 'Playfair Display, serif' }}>
         {quote.person ? (
           <span

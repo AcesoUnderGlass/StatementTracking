@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Filter as FilterIcon } from 'lucide-react';
+import { Filter as FilterIcon, List, Table2 } from 'lucide-react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
 import { FILTER_BAR_NO_TOPICS_MESSAGE } from './FilterBar';
@@ -8,16 +8,20 @@ import FilterTagPills from './FilterTagPills';
 import FilterSearchDropdown from './FilterSearchDropdown';
 import { filtersToTags, removeTag, addTag, buildTagGroups } from '../utils/filterTags';
 
+export type ViewMode = 'full' | 'compact';
+
 interface Props {
   filters: QuoteFilters;
   onChange: (filters: QuoteFilters) => void;
   jurisdictions: JurisdictionRow[];
   topics: TopicRow[];
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 
-export default function FilterBarHome({ filters, onChange, jurisdictions, topics }: Props) {
+export default function FilterBarHome({ filters, onChange, jurisdictions, topics, viewMode = 'full', onViewModeChange }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const activeTags = useMemo(() => filtersToTags(filters, jurisdictions, topics), [filters, jurisdictions, topics]);
   const tagGroups = useMemo(() => buildTagGroups(jurisdictions, topics), [jurisdictions, topics]);
@@ -128,6 +132,16 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
             onSelectTag={(tag) => onChange({ ...addTag(filters, tag), search: undefined })}
             onRemoveTag={(tag) => onChange(removeTag(filters, tag))}
           />
+          {onViewModeChange && (
+            <button
+              type="button"
+              className="h-9 w-9 flex items-center justify-center cursor-pointer text-slate-500 hover:text-slate-800 transition"
+              onClick={() => onViewModeChange(viewMode === 'full' ? 'compact' : 'full')}
+              title={viewMode === 'full' ? 'Compact view' : 'Full view'}
+            >
+              {viewMode === 'full' ? <Table2 size={16} /> : <List size={16} />}
+            </button>
+          )}
           <button
             type="button"
             className="h-9 w-9 flex items-center justify-center cursor-pointer"

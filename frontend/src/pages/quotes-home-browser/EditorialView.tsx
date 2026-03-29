@@ -1,10 +1,42 @@
-import { useCallback, useRef } from 'react';
-import FilterBarHome from '../../components/FilterBarHome';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import FilterBarHome, { type ViewMode } from '../../components/FilterBarHome';
 import EditorialCardTableVersion from './EditorialCardTableVersion';
+import EditorialCardCompact from './EditorialCardCompact';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
-import type { FilterTagCategory } from '../../types';
+import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 import { addTag } from '../../utils/filterTags';
+
+interface CompactGroup {
+  key: string;
+  quotes: QuoteWithDetails[];
+  startIndex: number;
+  sourceName: string | null;
+}
+
+function groupConsecutiveQuotes(quotes: QuoteWithDetails[]): CompactGroup[] {
+  const groups: CompactGroup[] = [];
+  for (let i = 0; i < quotes.length; i++) {
+    const q = quotes[i];
+    const personId = q.person?.id ?? null;
+    const articleUrl = q.article?.url ?? null;
+    const last = groups[groups.length - 1];
+    const lastQ = last?.quotes[last.quotes.length - 1];
+    const lastPersonId = lastQ?.person?.id ?? null;
+    const lastArticleUrl = lastQ?.article?.url ?? null;
+    if (last && personId !== null && personId === lastPersonId && articleUrl !== null && articleUrl === lastArticleUrl) {
+      last.quotes.push(q);
+    } else {
+      groups.push({
+        key: `${i}`,
+        quotes: [q],
+        startIndex: i,
+        sourceName: q.article?.title || q.article?.publication || null,
+      });
+    }
+  }
+  return groups;
+}
 
 const EditorialView = ({
   filters,
@@ -26,6 +58,9 @@ const EditorialView = ({
   totalPages,
 }: ViewProps) => {
   const listTopRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('full');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const compactGroups = useMemo(() => groupConsecutiveQuotes(data?.quotes ?? []), [data?.quotes]);
 
   function scrollListToTop() {
     listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -80,6 +115,8 @@ const EditorialView = ({
         onChange={setFilters}
         jurisdictions={jurisdictionOptions}
         topics={topicOptions}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
       {error && (
@@ -101,7 +138,71 @@ const EditorialView = ({
             ref={listTopRef}
             className="max-w-12xl mx-auto scroll-mt-24"
           >
-            {data?.quotes.map((q, i) => {
+            {viewMode === 'compact' ? compactGroups.map((group) => {
+              const isGroupExpanded = expandedGroups.has(group.key);
+              const quotesToShow = isGroupExpanded ? group.quotes : [group.quotes[0]];
+              const hiddenCount = group.quotes.length - 1;
+              return (
+                <div key={group.key}>
+                  {quotesToShow.map((q, gi) => {
+                    const globalIdx = group.startIndex + gi;
+                    const showPerson = globalIdx === 0 || (gi === 0 && (globalIdx === 0 || q.person?.id !== (data!.quotes[globalIdx - 1]?.person?.id)));
+                    if (expanded === q.id || isGroupExpanded) {
+                      const collapseHandler = expanded === q.id
+                        ? () => setExpanded(null)
+                        : isGroupExpanded
+                        ? () => setExpandedGroups((prev) => { const next = new Set(prev); next.delete(group.key); return next; })
+                        : undefined;
+                      return (
+                        <EditorialCardTableVersion
+                          key={q.id}
+                          quote={q}
+                          index={globalIdx}
+                          showPerson={showPerson}
+                          isSortingByAddedDate={!filters.sort_by || filters.sort_by === 'created_at'}
+                          isEditing={editing === q.id}
+                          editForm={editForm}
+                          setEditForm={setEditForm}
+                          jurisdictionOptions={jurisdictionOptions}
+                          topicOptions={topicOptions}
+                          onToggle={() => {}}
+                          onStartEdit={() => startEdit(q)}
+                          onCancelEdit={cancelEdit}
+                          onSaveEdit={() => saveEdit(q.id)}
+                          onDelete={() => onDelete(q.id)}
+                          onViewOriginal={(id) => setExpanded(id)}
+                          onTagClick={handleTagClick}
+                          onDateClick={handleDateClick}
+                          onCollapse={collapseHandler}
+                        />
+                      );
+                    }
+                    return (
+                      <EditorialCardCompact
+                        key={q.id}
+                        quote={q}
+                        index={globalIdx}
+                        showPerson={showPerson}
+                        onClick={() => setExpanded(q.id)}
+                        onTagClick={handleTagClick}
+                      />
+                    );
+                  })}
+                  {hiddenCount > 0 && !isGroupExpanded && (
+                    <div
+                      className="grid min-w-0 grid-cols-1 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] border-t border-slate-300/10 cursor-pointer bg-white hover:bg-slate-50/80 transition-colors"
+                      onClick={() => setExpandedGroups((prev) => { const next = new Set(prev); next.add(group.key); return next; })}
+                    >
+                      <div className="md:col-start-4 px-3 pt-0.5 pb-1 md:pl-0 md:pr-6">
+                        <span className="text-xs italic" style={{ color: '#8a8070' }}>
+                          {hiddenCount} more quote{hiddenCount > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }) : data?.quotes.map((q, i) => {
               const prevPerson = i > 0 ? data.quotes[i - 1].person : null;
               const showPerson = i === 0 || q.person?.id !== prevPerson?.id;
               return (
