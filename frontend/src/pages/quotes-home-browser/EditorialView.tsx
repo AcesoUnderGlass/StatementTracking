@@ -91,7 +91,7 @@ const EditorialView = ({
       <Link
         to="/quotes"
         className="hidden md:block fixed top-3 left-3 text-sm hover:opacity-70 transition z-20"
-        style={{ fontFamily: 'Lora, serif', color: '#6b6050' }}
+        style={{ color: '#aaa' }}
       >
         Admin
       </Link>
