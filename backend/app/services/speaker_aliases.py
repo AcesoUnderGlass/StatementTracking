@@ -6,6 +6,8 @@ from __future__ import annotations
 _SPEAKER_ALIASES_TO_CANONICAL: dict[str, str] = {
     "trump whitehouse": "Trump administration",
     "trump white house": "Trump administration",
+    "the white house": "Trump administration",
+    "white house": "Trump administration",
 }
 
 
