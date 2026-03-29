@@ -58,7 +58,7 @@ const EditorialView = ({
   totalPages,
 }: ViewProps) => {
   const listTopRef = useRef<HTMLDivElement>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('full');
+  const [viewMode, setViewMode] = useState<ViewMode>('compact');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const compactGroups = useMemo(() => groupConsecutiveQuotes(data?.quotes ?? []), [data?.quotes]);
 
@@ -86,24 +86,24 @@ const EditorialView = ({
 
   return (
     <div
-      className="-mx-12 -my-8 px-12 py-8 min-h-screen"
+      className="md:-mx-12 md:-my-8 md:px-12 md:py-8 min-h-screen"
     >
       <Link
         to="/quotes"
-        className="fixed top-3 left-3 text-sm hover:opacity-70 transition z-20"
+        className="hidden md:block fixed top-3 left-3 text-sm hover:opacity-70 transition z-20"
         style={{ fontFamily: 'Lora, serif', color: '#6b6050' }}
       >
         Admin
       </Link>
       <div className="text-center mb-8">
         <h2
-          className="text-3xl font-bold tracking-[0.18em] uppercase"
+          className="text-2xl md:text-3xl font-bold tracking-[0.18em] uppercase"
           style={{ fontFamily: 'Playfair Display, serif', color: '#1a1a2e' }}
         >
           Statements on AI
         </h2>
         <p
-          className="text-sm italic py-2"
+          className="text-sm md:text-sm italic py-2 px-8 text-balance"
           style={{ fontFamily: 'Lora, serif', color: '#8a8070' }}
         >
           Browse and filter AI-related quotes from prominent speakers.

@@ -6,7 +6,7 @@ const EditorialCardQuoteColumn = ({quote}:{quote: QuoteWithDetails}) => {
 
   return (
     <div
-      className="bg-white flex flex-col justify-center px-3 pt-5 pb-5 md:px-6"
+      className="bg-white flex flex-col justify-start px-3 pt-1 pb-3 md:px-6 md:pt-5 md:pb-5"
     >
         <p className="text-sm leading-relaxed pr-0 md:pr-3" style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}>
           &ldquo;{quote.quote_text}&rdquo;

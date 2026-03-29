@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Search } from 'lucide-react';
 import type { FilterTag, FilterTagGroup } from '../types';
 
 interface Props {
@@ -21,18 +21,31 @@ function isActive(tag: FilterTag, activeTags: FilterTag[]) {
 
 const FilterSearchDropdown = ({searchValue, onSearchChange, groups, activeTags, onSelectTag, onRemoveTag}: Props) => {
   const [open, setOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(Boolean(searchValue));
   const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
+  const isMobileSearchVisible = showMobileSearch || Boolean(searchValue);
+
+  function focusSearchInput() {
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+    (isMobile ? mobileInputRef.current : desktopInputRef.current)?.focus();
+  }
 
   useEffect(() => {
     function handleClick(e: globalThis.MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        if (!searchValue) setShowMobileSearch(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (isMobileSearchVisible) mobileInputRef.current?.focus();
+  }, [isMobileSearchVisible]);
 
   const filteredGroups = useMemo(() => {
     const q = normalize(searchValue);
@@ -47,14 +60,33 @@ const FilterSearchDropdown = ({searchValue, onSearchChange, groups, activeTags, 
 
   return (
     <div ref={containerRef} className="relative">
+      {!isMobileSearchVisible && (
+        <button
+          type="button"
+          onClick={() => setShowMobileSearch(true)}
+          className="h-9 w-9 flex items-center justify-center cursor-pointer sm:hidden"
+          title="Search"
+        >
+          <Search size={16} />
+        </button>
+      )}
       <input
-        ref={inputRef}
+        ref={mobileInputRef}
         type="text"
         value={searchValue}
         onChange={(e) => onSearchChange(e.target.value)}
         onFocus={() => setOpen(true)}
         placeholder="Search quote text..."
-        className="px-3 border-b border-slate-400 py-2 focus:outline-none text-xs"
+        className={`${isMobileSearchVisible ? 'block' : 'hidden'} w-28 px-3 border-b border-slate-400 py-2 focus:outline-none text-xs sm:hidden`}
+      />
+      <input
+        ref={desktopInputRef}
+        type="text"
+        value={searchValue}
+        onChange={(e) => onSearchChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        placeholder="Search quote text..."
+        className="hidden px-3 border-b border-slate-400 py-2 focus:outline-none text-xs sm:block"
       />
       {open && filteredGroups.length > 0 && (
         <div className="absolute right-0 top-full z-30 mt-1 w-64 bg-white border border-slate-200 shadow-lg overflow-y-auto" style={{ maxHeight: 'calc(100vh - 10rem)' }}>
@@ -73,7 +105,7 @@ const FilterSearchDropdown = ({searchValue, onSearchChange, groups, activeTags, 
                     onClick={() => {
                       if (active) onRemoveTag(opt);
                       else onSelectTag(opt);
-                      inputRef.current?.focus();
+                      focusSearchInput();
                     }}
                     className={`ml-2 w-full text-left px-2.5 py-0.75 text-xs flex items-center gap-1.5 hover:bg-slate-50 ${active ? 'font-semibold text-slate-800' : 'text-slate-500'}`}
                   >

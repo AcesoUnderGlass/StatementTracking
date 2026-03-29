@@ -16,7 +16,7 @@ const EditorialCardTagsColumn = ({quote, onTagClick}:{quote: QuoteWithDetails, o
 
   return (
     <div
-      className="bg-white flex flex-col justify-center px-3 pt-3 pb-5 md:pt-5"
+      className="bg-white flex flex-col justify-start px-3 pt-0 pb-3 md:pt-5 md:pb-5"
     >
       {(quote.person?.party || quote.person?.type || (quote.jurisdictions ?? []).length > 0 || (quote.topics ?? []).length > 0) && (
         <div className="flex flex-wrap gap-1.5">

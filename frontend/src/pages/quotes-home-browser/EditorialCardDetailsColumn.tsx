@@ -46,10 +46,10 @@ const EditorialCardDetailsColumn = ({
   });
 
   return (
-    <div className="py-1 flex flex-col justify-center px-3 py-4 md:pl-0 md:pr-6 relative bg-white">
+    <div className="flex flex-col justify-start px-3 pt-0 pb-4 md:pl-0 md:pr-6 md:pt-5 relative bg-white">
       {quote.article?.title && (
         <p
-          className="mt-3 mb-2 text-xs text-black font-semibold leading-tight cursor-pointer hover:underline"
+          className="mt-1 mb-2 text-xs text-black font-semibold leading-tight cursor-pointer hover:underline md:mt-0"
           onClick={(e) => { e.stopPropagation(); onTagClick?.('source', quote.article!.title!); }}
         >
           {quote.article.title}
@@ -134,7 +134,7 @@ const EditorialCardDetailsColumn = ({
             </p>
           </>}
 
-          <div className="flex gap-3 absolute top-2 right-2 opacity-70 transition-opacity duration-100 cursor-pointer md:opacity-0 md:group-hover:opacity-50 md:hover:opacity-100">
+          <div className="flex gap-3 absolute top-3 right-3 opacity-70 transition-opacity duration-100 cursor-pointer md:top-2 md:right-2 md:opacity-0 md:group-hover:opacity-50 md:hover:opacity-100">
             <button
               onClick={(e) => {
                 if (isEditing) onCancelEdit();

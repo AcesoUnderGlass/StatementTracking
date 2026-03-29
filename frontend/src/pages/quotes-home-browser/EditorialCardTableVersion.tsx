@@ -1,3 +1,4 @@
+import { ChevronUp } from 'lucide-react';
 import SharedEditForm from './SharedEditForm';
 import EditorialCardPersonColumn from './EditorialCardPersonColumn';
 import EditorialCardQuoteColumn from './EditorialCardQuoteColumn';
@@ -29,10 +30,10 @@ const EditorialCardThreeColumns = ({
   return (
     <div
       onClick={onCollapse ? undefined : onToggle}
-      className={`grid min-w-0 grid-cols-1 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] ${borderClass} group${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
+      className={`grid min-w-0 grid-cols-1 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] ${borderClass} group relative${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
       
     >
-      <EditorialCardPersonColumn quote={quote} onTagClick={onTagClick} onDateClick={onDateClick} onCollapse={onCollapse} showPerson={showPerson} />
+      <EditorialCardPersonColumn quote={quote} onTagClick={onTagClick} onDateClick={onDateClick} showPerson={showPerson} />
       <EditorialCardQuoteColumn quote={quote} />
       <EditorialCardTagsColumn quote={quote} onTagClick={onTagClick} />
       <EditorialCardDetailsColumn
@@ -44,6 +45,18 @@ const EditorialCardThreeColumns = ({
         onViewOriginal={onViewOriginal}
         onTagClick={onTagClick}
       />
+      {onCollapse && (
+        <div className="absolute bottom-3 left-3 md:left-4">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onCollapse(); }}
+            className="text-slate-400 hover:text-slate-700 cursor-pointer"
+            aria-label="Collapse card"
+          >
+            <ChevronUp size={14} />
+          </button>
+        </div>
+      )}
       {isEditing && (
         <div className="md:col-span-4 bg-white p-3 rounded-md" onClick={(e) => e.stopPropagation()}>
           <SharedEditForm
