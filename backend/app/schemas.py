@@ -119,6 +119,7 @@ class QuoteUpdate(BaseModel):
     date_said: Optional[date] = None
     date_recorded: Optional[date] = None
     person_id: Optional[int] = None
+    new_person: Optional[PersonCreate] = None
     jurisdiction_names: Optional[List[str]] = None
     topic_names: Optional[List[str]] = None
 

@@ -18,6 +18,7 @@ import type {
   SuggestTagsRequest,
   SuggestTagsResponse,
   AddQuoteRequest,
+  PersonCreate,
 } from '../types';
 
 const BASE = '/api';
@@ -140,6 +141,7 @@ export function updateQuote(
     date_said?: string | null;
     date_recorded?: string | null;
     person_id?: number;
+    new_person?: PersonCreate;
     jurisdiction_names?: string[] | null;
     topic_names?: string[] | null;
   },

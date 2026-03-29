@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
-from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics
+from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics, SpeakerType, Party, Chamber
 from ..schemas import QuoteUpdate, DuplicateCheckRequest, SuggestTagsRequest, SuggestTagsResponse
 from ..services.dedup import check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
@@ -262,6 +262,30 @@ def update_quote(
     update_data = updates.model_dump(exclude_unset=True)
     tag_debug = {k: update_data.get(k) for k in ["jurisdiction_names", "topic_names"]}
     print(f"[DEBUG] update_quote {quote_id}: {tag_debug}")
+
+    new_person_data = update_data.pop("new_person", None)
+    if new_person_data:
+        from ..services.speaker_aliases import canonical_speaker_name
+        display_name = canonical_speaker_name(new_person_data["name"])
+        existing = db.query(Person).filter(
+            Person.name.ilike(display_name.lower())
+        ).first()
+        if existing:
+            update_data["person_id"] = existing.id
+        else:
+            person = Person(
+                name=display_name,
+                type=SpeakerType(new_person_data["type"]),
+                party=Party(new_person_data["party"]) if new_person_data.get("party") else None,
+                role=new_person_data.get("role"),
+                chamber=Chamber(new_person_data["chamber"]) if new_person_data.get("chamber") else None,
+                state=new_person_data.get("state"),
+                employer=new_person_data.get("employer"),
+                notes=new_person_data.get("notes"),
+            )
+            db.add(person)
+            db.flush()
+            update_data["person_id"] = person.id
 
     tag_values = {}
     for field_name, _setter, _rel in TAG_FIELDS:

@@ -11,9 +11,12 @@ import {
   addQuoteToArticle,
   fetchJurisdictions,
   fetchTopics,
+  suggestTags,
 } from '../api/client';
-import type { PendingArticle, PendingQuote, PersonCreate } from '../types';
+import type { PendingArticle, PendingQuote, PersonCreate, JurisdictionRow, TopicRow } from '../types';
 import SharedQuoteCard, { type QuoteCardData } from '../components/QuoteCard';
+import PersonTypeahead from '../components/PersonTypeahead';
+import TagSelect from '../components/TagSelect';
 
 const SOURCE_LABELS: Record<string, string> = {
   rss_feed: 'RSS Feed',
@@ -37,59 +40,130 @@ function QuoteCard({
   onApprove,
   onReject,
   isActioning,
+  jurisdictionOptions,
+  topicOptions,
 }: {
   quote: PendingQuote;
   onApprove: () => void;
   onReject: () => void;
   isActioning: boolean;
+  jurisdictionOptions: JurisdictionRow[];
+  topicOptions: TopicRow[];
 }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(quote.quote_text);
   const [editContext, setEditContext] = useState(quote.context || '');
+  const [editPersonId, setEditPersonId] = useState<number | null>(quote.person?.id ?? null);
+  const [editNewPerson, setEditNewPerson] = useState<PersonCreate | null>(null);
+  const [editJurisdictions, setEditJurisdictions] = useState<string[]>(quote.jurisdictions);
+  const [editTopics, setEditTopics] = useState<string[]>(quote.topics);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      updateQuote(quote.id, {
+    mutationFn: () => {
+      const payload: Parameters<typeof updateQuote>[1] = {
         quote_text: editText,
         context: editContext || undefined,
-      }),
+        jurisdiction_names: editJurisdictions,
+        topic_names: editTopics,
+      };
+      if (editNewPerson) {
+        payload.new_person = editNewPerson;
+      } else if (editPersonId !== (quote.person?.id ?? null)) {
+        payload.person_id = editPersonId ?? undefined;
+      }
+      return updateQuote(quote.id, payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['review-pending'] });
       setEditing(false);
+      setEditNewPerson(null);
     },
   });
+
+  async function handleSuggestTags() {
+    setSuggesting(true);
+    try {
+      const res = await suggestTags({
+        quote_text: editText,
+        speaker_name: editNewPerson?.name ?? quote.person?.name ?? undefined,
+      });
+      if (res.jurisdictions?.length) {
+        setEditJurisdictions((prev) => [...new Set([...prev, ...res.jurisdictions])]);
+      }
+      if (res.topics?.length) {
+        setEditTopics((prev) => [...new Set([...prev, ...res.topics])]);
+      }
+    } catch {
+      // silently fail — user can still tag manually
+    } finally {
+      setSuggesting(false);
+    }
+  }
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
       <div className="flex items-start justify-between gap-4 mb-2">
-        <div className="flex items-center gap-2 text-sm">
-          {quote.person && (
-            <>
-              <span className="font-medium text-slate-900">{quote.person.name}</span>
-              {quote.person.party && (
-                <span
-                  className={`inline-block px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                    quote.person.party === 'Democrat'
-                      ? 'bg-blue-100 text-blue-700'
-                      : quote.person.party === 'Republican'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-purple-100 text-purple-700'
-                  }`}
-                >
-                  {quote.person.party}
-                </span>
-              )}
-              {quote.person.role && (
-                <span className="text-slate-500">{quote.person.role}</span>
-              )}
-            </>
-          )}
-        </div>
+        {editing ? (
+          <div className="flex-1 mr-4 max-w-xs">
+            <PersonTypeahead
+              initialName={quote.person?.name ?? ''}
+              selectedPersonId={editPersonId}
+              hasAssignment={!!(editPersonId || editNewPerson)}
+              onSelect={(personId) => {
+                setEditPersonId(personId);
+                setEditNewPerson(null);
+              }}
+              onCreateNew={(person) => {
+                setEditNewPerson(person);
+                setEditPersonId(null);
+              }}
+              onClear={() => {
+                setEditPersonId(null);
+                setEditNewPerson(null);
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm">
+            {quote.person && (
+              <>
+                <span className="font-medium text-slate-900">{quote.person.name}</span>
+                {quote.person.party && (
+                  <span
+                    className={`inline-block px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                      quote.person.party === 'Democrat'
+                        ? 'bg-blue-100 text-blue-700'
+                        : quote.person.party === 'Republican'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-purple-100 text-purple-700'
+                    }`}
+                  >
+                    {quote.person.party}
+                  </span>
+                )}
+                {quote.person.role && (
+                  <span className="text-slate-500">{quote.person.role}</span>
+                )}
+              </>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => setEditing(!editing)}
+            onClick={() => {
+              if (editing) {
+                setEditPersonId(quote.person?.id ?? null);
+                setEditNewPerson(null);
+                setEditText(quote.quote_text);
+                setEditContext(quote.context || '');
+                setEditJurisdictions(quote.jurisdictions);
+                setEditTopics(quote.topics);
+              }
+              setEditing(!editing);
+            }}
             className="px-2 py-1 text-xs rounded border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
           >
             {editing ? 'Cancel' : 'Edit'}
@@ -131,13 +205,45 @@ function QuoteCard({
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-            className="px-3 py-1.5 text-xs rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Jurisdictions</label>
+              <TagSelect
+                selected={editJurisdictions}
+                options={jurisdictionOptions.map((j) => ({ name: j.name }))}
+                onChange={setEditJurisdictions}
+                placeholder="Search jurisdictions..."
+                color="blue"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Topics</label>
+              <TagSelect
+                selected={editTopics}
+                options={topicOptions.map((t) => ({ name: t.name }))}
+                onChange={setEditTopics}
+                placeholder="Search topics..."
+                color="violet"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+              className="px-3 py-1.5 text-xs rounded font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={handleSuggestTags}
+              disabled={suggesting}
+              className="px-3 py-1.5 text-xs rounded font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors"
+            >
+              {suggesting ? 'Suggesting...' : 'Suggest Tags'}
+            </button>
+          </div>
         </div>
       ) : (
         <>
@@ -174,7 +280,7 @@ function QuoteCard({
         </>
       )}
 
-      {(quote.jurisdictions.length > 0 || quote.topics.length > 0) && (
+      {!editing && (quote.jurisdictions.length > 0 || quote.topics.length > 0) && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {quote.jurisdictions.map((j) => (
             <span key={j} className="px-1.5 py-0.5 rounded text-xs bg-sky-100 text-sky-700">
@@ -377,6 +483,8 @@ function ArticleCard({ article }: { article: PendingArticle }) {
               onApprove={() => approveOne.mutate(q.id)}
               onReject={() => rejectOne.mutate(q.id)}
               isActioning={isActioning}
+              jurisdictionOptions={jurisdictionOptions}
+              topicOptions={topicOptions}
             />
           ))}
 
