@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronUp, Link2, Pencil } from 'lucide-react';
+import { ChevronUp, Link2 } from 'lucide-react';
 import { fetchQuote } from '../../api/client';
 import SharedEditForm from './SharedEditForm';
 import { getEditorialArticleDomain, getEditorialCardBorderClass, getQuoteTextFragment, formatEditorialDate } from './editorialCardHelpers';
@@ -17,7 +17,6 @@ const EditorialCardTableVersionMobile = ({
   jurisdictionOptions,
   topicOptions,
   onToggle,
-  onStartEdit,
   onCancelEdit,
   onSaveEdit,
   onDelete,
