@@ -19,7 +19,7 @@ const EditorialCardTag = ({tag, onTagClick}:{tag: EditorialCardTagItem, onTagCli
 
   return (
     <span
-      className="px-2 py-0.5 rounded-sm text-[10px] font-medium cursor-pointer hover:opacity-70 transition-opacity"
+      className="px-1 py-0.25 rounded-sm text-[10px] font-medium cursor-pointer hover:opacity-70 transition-opacity"
       style={{border: style.border, color: style.color, background: style.background}}
       onClick={(e) => { e.stopPropagation(); onTagClick?.(tag.category, tag.name); }}
     >

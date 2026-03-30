@@ -15,7 +15,7 @@ import type { EditFormState, ViewProps } from './types';
 
 const INITIAL_PAGE_SIZE = 10;
 const FULL_PAGE_SIZE = 50;
-const HOME_DEFAULTS: QuoteFilters = { page: 1, page_size: FULL_PAGE_SIZE, sort_by: 'date_said', sort_dir: 'desc' };
+const HOME_DEFAULTS: QuoteFilters = { page: 1, page_size: FULL_PAGE_SIZE, sort_by: 'created_at', sort_dir: 'desc' };
 
 const QuotesHomeBrowser = () => {
   const queryClient = useQueryClient();
