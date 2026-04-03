@@ -49,3 +49,7 @@ feeds:
   - name: EU AI Act News
     url: https://news.google.com/rss/search?q=%22EU+AI+Act%22+OR+%22European+AI%22+regulation&hl=en-US&gl=US&ceid=US:en
     source_type: government_rss
+
+  - name: Google News - C-SPAN AI
+    url: https://news.google.com/rss/search?q=%22artificial+intelligence%22+site%3Ac-span.org&hl=en-US&gl=US&ceid=US:en
+    source_type: government_rss

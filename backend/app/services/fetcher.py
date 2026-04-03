@@ -39,6 +39,7 @@ PUBLICATION_LOOKUP = {
     "arstechnica.com": "Ars Technica",
     "npr.org": "NPR",
     "pbs.org": "PBS",
+    "c-span.org": "C-SPAN",
     "usatoday.com": "USA Today",
     "latimes.com": "Los Angeles Times",
     "cnbc.com": "CNBC",
@@ -717,6 +718,11 @@ def _is_facebook_url(url: str) -> bool:
     return is_facebook_url(url)
 
 
+def _is_cspan_url(url: str) -> bool:
+    from .cspan_fetcher import is_cspan_url
+    return is_cspan_url(url)
+
+
 def fetch_article(url: str) -> dict:
     resolved = _resolve_google_news_url(url)
     if resolved:
@@ -734,6 +740,9 @@ def fetch_article(url: str) -> dict:
     if _is_facebook_url(url):
         from .facebook_fetcher import fetch_facebook_post
         return fetch_facebook_post(url)
+    if _is_cspan_url(url):
+        from .cspan_fetcher import fetch_cspan_transcript
+        return fetch_cspan_transcript(url)
     if _is_pdf_url(url):
         return _fetch_pdf_article(url)
     return _fetch_html_article(url)
