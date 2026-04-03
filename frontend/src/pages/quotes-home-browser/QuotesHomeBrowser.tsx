@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   fetchQuotes,
@@ -13,14 +13,15 @@ import type { QuoteWithDetails } from '../../types';
 import EditorialView from './EditorialView';
 import type { EditFormState, ViewProps } from './types';
 
-const INITIAL_PAGE_SIZE = 10;
 const FULL_PAGE_SIZE = 50;
 const HOME_DEFAULTS: QuoteFilters = { page: 1, page_size: FULL_PAGE_SIZE, sort_by: 'created_at', sort_dir: 'desc' };
+
+const STALE_1H = 1000 * 60 * 60;
+const STALE_1M = 1000 * 60;
 
 const QuotesHomeBrowser = () => {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useUrlFilters(HOME_DEFAULTS);
-  const [initialLoaded, setInitialLoaded] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({
@@ -31,31 +32,23 @@ const QuotesHomeBrowser = () => {
     topic_names: [],
   });
 
-  const isFirstPage = filters.page === 1;
-  const effectiveFilters: QuoteFilters = (!initialLoaded && isFirstPage)
-    ? { ...filters, page_size: INITIAL_PAGE_SIZE }
-    : filters;
-
-  const { data, isLoading, error, isFetched } = useQuery({
-    queryKey: ['quotes', effectiveFilters],
-    queryFn: () => fetchQuotes(effectiveFilters),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['quotes', filters],
+    queryFn: () => fetchQuotes(filters),
     placeholderData: keepPreviousData,
+    staleTime: STALE_1M,
   });
-
-  useEffect(() => {
-    if (isFetched && !initialLoaded && isFirstPage) {
-      setInitialLoaded(true);
-    }
-  }, [isFetched, initialLoaded, isFirstPage]);
 
   const { data: jurisdictionOptions = [] } = useQuery({
     queryKey: ['jurisdictions'],
     queryFn: fetchJurisdictions,
+    staleTime: STALE_1H,
   });
 
   const { data: topicOptions = [], error: topicError } = useQuery({
     queryKey: ['topics'],
     queryFn: fetchTopics,
+    staleTime: STALE_1H,
   });
 
   if (topicError) console.error('[topics query error]', topicError);

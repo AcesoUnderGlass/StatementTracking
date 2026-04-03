@@ -6,7 +6,7 @@ from io import StringIO
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -266,12 +266,15 @@ def list_quotes(
 
     quotes = base.offset((page - 1) * page_size).limit(page_size).all()
 
-    return {
-        "quotes": [_quote_to_dict(q) for q in quotes],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    }
+    return JSONResponse(
+        content={
+            "quotes": [_quote_to_dict(q) for q in quotes],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        },
+        headers={"Cache-Control": "public, s-maxage=60, stale-while-revalidate=300"},
+    )
 
 CSV_COLUMNS = [
     "id", "quote_text", "context", "date_said", "date_recorded",
