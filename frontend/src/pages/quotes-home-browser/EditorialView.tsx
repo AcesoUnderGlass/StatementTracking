@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import FilterBarHome, { type ViewMode } from '../../components/FilterBarHome';
+import ExportButton from '../../components/ExportButton';
 import EditorialCardTableVersion from './EditorialCardTableVersion';
 import EditorialCardCompact from './EditorialCardCompact';
 import type { ViewProps } from './types';
 import { Link } from 'react-router-dom';
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 import { addTag } from '../../utils/filterTags';
+import { exportQuotes } from '../../api/client';
 
 interface CompactGroup {
   key: string;
@@ -238,11 +240,11 @@ const EditorialView = ({
             )}
           </div>
 
-          {totalPages > 1 && (
-            <div
-              className="max-w-4xl mx-auto flex items-center justify-center gap-6 mt-8 text-sm"
-              style={{ fontFamily: 'Lora, serif', color: '#6b6050' }}
-            >
+          <div
+            className="max-w-4xl mx-auto flex items-center justify-center gap-6 mt-8 text-sm"
+            style={{ fontFamily: 'Lora, serif', color: '#6b6050' }}
+          >
+            {totalPages > 1 && (
               <button
                 disabled={(filters.page || 1) <= 1}
                 onClick={() => {
@@ -254,12 +256,16 @@ const EditorialView = ({
               >
                 &larr; Previous
               </button>
+            )}
+            {totalPages > 1 && (
               <span>
                 Page {filters.page || 1} of {totalPages}{' '}
                 <span className="text-xs" style={{ color: '#a09880' }}>
                   ({data?.total} total)
                 </span>
               </span>
+            )}
+            {totalPages > 1 && (
               <button
                 disabled={(filters.page || 1) >= totalPages}
                 onClick={() => {
@@ -271,8 +277,12 @@ const EditorialView = ({
               >
                 Next &rarr;
               </button>
-            </div>
-          )}
+            )}
+            <ExportButton
+              onExport={(format) => exportQuotes(filters, format)}
+              total={data?.total}
+            />
+          </div>
         </>
       )}
     </div>

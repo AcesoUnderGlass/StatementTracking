@@ -1,8 +1,12 @@
+import csv
+import json
 import logging
 from datetime import date
+from io import StringIO
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -124,8 +128,9 @@ SORT_COLUMNS = {
 }
 
 
-@router.get("")
-def list_quotes(
+def _build_quotes_query(
+    db: Session,
+    *,
     person_id: Optional[int] = None,
     person_name: Optional[str] = None,
     article_title: Optional[str] = None,
@@ -136,19 +141,16 @@ def list_quotes(
     to_date: Optional[date] = None,
     added_from_date: Optional[date] = None,
     added_to_date: Optional[date] = None,
-    jurisdiction_ids: Optional[list[int]] = Query(None),
-    topic_ids: Optional[list[int]] = Query(None),
-    include_duplicates: bool = Query(False),
-    include_unapproved: bool = Query(False),
-    review_status: Optional[str] = Query("approved"),
-    sort_by: Optional[str] = Query(None),
-    sort_dir: Optional[str] = Query(None),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=200),
-    db: Session = Depends(get_db),
+    jurisdiction_ids: Optional[list[int]] = None,
+    topic_ids: Optional[list[int]] = None,
+    include_duplicates: bool = False,
+    include_unapproved: bool = False,
+    review_status: Optional[str] = "approved",
+    sort_by: Optional[str] = None,
+    sort_dir: Optional[str] = None,
 ):
+    """Build a filtered + sorted Quote query. Returns (query, total_count)."""
     joined_person = False
-
     base = db.query(Quote)
 
     if not include_duplicates:
@@ -217,16 +219,52 @@ def list_quotes(
     else:
         order = Quote.created_at.desc()
 
-    quotes = (
-        base.options(
-            selectinload(Quote.person),
-            selectinload(Quote.article),
-        )
-        .order_by(order, Quote.id)
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
+    base = base.options(
+        selectinload(Quote.person),
+        selectinload(Quote.article),
+    ).order_by(order, Quote.id)
+
+    return base, total
+
+
+@router.get("")
+def list_quotes(
+    person_id: Optional[int] = None,
+    person_name: Optional[str] = None,
+    article_title: Optional[str] = None,
+    search: Optional[str] = None,
+    party: Optional[str] = None,
+    type: Optional[str] = None,
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    added_from_date: Optional[date] = None,
+    added_to_date: Optional[date] = None,
+    jurisdiction_ids: Optional[list[int]] = Query(None),
+    topic_ids: Optional[list[int]] = Query(None),
+    include_duplicates: bool = Query(False),
+    include_unapproved: bool = Query(False),
+    review_status: Optional[str] = Query("approved"),
+    sort_by: Optional[str] = Query(None),
+    sort_dir: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    base, total = _build_quotes_query(
+        db,
+        person_id=person_id, person_name=person_name,
+        article_title=article_title, search=search,
+        party=party, type=type,
+        from_date=from_date, to_date=to_date,
+        added_from_date=added_from_date, added_to_date=added_to_date,
+        jurisdiction_ids=jurisdiction_ids, topic_ids=topic_ids,
+        include_duplicates=include_duplicates,
+        include_unapproved=include_unapproved,
+        review_status=review_status,
+        sort_by=sort_by, sort_dir=sort_dir,
     )
+
+    quotes = base.offset((page - 1) * page_size).limit(page_size).all()
 
     return {
         "quotes": [_quote_to_dict(q) for q in quotes],
@@ -234,6 +272,103 @@ def list_quotes(
         "page": page,
         "page_size": page_size,
     }
+
+CSV_COLUMNS = [
+    "id", "quote_text", "context", "date_said", "date_recorded",
+    "review_status", "created_at", "is_duplicate", "duplicate_of_id",
+    "speaker_name", "speaker_party", "speaker_type", "speaker_role", "speaker_state",
+    "article_title", "article_url", "article_publication", "article_published_date",
+    "jurisdictions", "topics",
+]
+
+
+def _quote_to_csv_row(q: Quote) -> list[str]:
+    d = _quote_to_dict(q)
+    p = d.get("person") or {}
+    a = d.get("article") or {}
+    return [
+        str(d["id"]),
+        d["quote_text"] or "",
+        d["context"] or "",
+        d["date_said"] or "",
+        d["date_recorded"] or "",
+        d["review_status"] or "",
+        d["created_at"] or "",
+        str(d["is_duplicate"]),
+        str(d["duplicate_of_id"] or ""),
+        p.get("name") or "",
+        p.get("party") or "",
+        p.get("type") or "",
+        p.get("role") or "",
+        p.get("state") or "",
+        a.get("title") or "",
+        a.get("url") or "",
+        a.get("publication") or "",
+        a.get("published_date") or "",
+        "; ".join(d.get("jurisdictions") or []),
+        "; ".join(d.get("topics") or []),
+    ]
+
+
+@router.get("/export")
+def export_quotes(
+    person_id: Optional[int] = None,
+    person_name: Optional[str] = None,
+    article_title: Optional[str] = None,
+    search: Optional[str] = None,
+    party: Optional[str] = None,
+    type: Optional[str] = None,
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    added_from_date: Optional[date] = None,
+    added_to_date: Optional[date] = None,
+    jurisdiction_ids: Optional[list[int]] = Query(None),
+    topic_ids: Optional[list[int]] = Query(None),
+    include_duplicates: bool = Query(False),
+    include_unapproved: bool = Query(False),
+    review_status: Optional[str] = Query("approved"),
+    sort_by: Optional[str] = Query(None),
+    sort_dir: Optional[str] = Query(None),
+    format: str = Query("csv"),
+    db: Session = Depends(get_db),
+):
+    base, _total = _build_quotes_query(
+        db,
+        person_id=person_id, person_name=person_name,
+        article_title=article_title, search=search,
+        party=party, type=type,
+        from_date=from_date, to_date=to_date,
+        added_from_date=added_from_date, added_to_date=added_to_date,
+        jurisdiction_ids=jurisdiction_ids, topic_ids=topic_ids,
+        include_duplicates=include_duplicates,
+        include_unapproved=include_unapproved,
+        review_status=review_status,
+        sort_by=sort_by, sort_dir=sort_dir,
+    )
+
+    quotes = base.all()
+    today = date.today().isoformat()
+
+    if format == "json":
+        content = json.dumps([_quote_to_dict(q) for q in quotes], indent=2)
+        return StreamingResponse(
+            StringIO(content),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=quotes_export_{today}.json"},
+        )
+
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(CSV_COLUMNS)
+    for q in quotes:
+        writer.writerow(_quote_to_csv_row(q))
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=quotes_export_{today}.csv"},
+    )
+
 
 @router.get("/{quote_id}")
 def get_quote(quote_id: int, db: Session = Depends(get_db)):

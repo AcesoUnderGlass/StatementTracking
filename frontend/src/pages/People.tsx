@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { fetchPeople } from '../api/client';
+import { fetchPeople, exportPeople } from '../api/client';
+import ExportButton from '../components/ExportButton';
 
 export default function People() {
   const navigate = useNavigate();
@@ -33,13 +34,19 @@ export default function People() {
         All speakers and institutions tracked in the system.
       </p>
 
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search by name..."
-        className="mb-6 w-72 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
+      <div className="flex items-center gap-3 mb-6">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name..."
+          className="w-72 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <ExportButton
+          onExport={(format) => exportPeople(search || undefined, format)}
+          total={people?.length}
+        />
+      </div>
 
       {error && (
         <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">

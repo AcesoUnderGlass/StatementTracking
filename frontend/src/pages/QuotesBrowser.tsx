@@ -8,11 +8,13 @@ import {
   fetchTopics,
   updateQuote,
   deleteQuote,
+  exportQuotes,
   type QuoteFilters,
 } from '../api/client';
 import { useUrlFilters } from '../hooks/useUrlFilters';
 import type { JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../types';
 import FilterBar from '../components/FilterBar';
+import ExportButton from '../components/ExportButton';
 
 type VariantKey = '0' | '1' | '3';
 
@@ -866,11 +868,11 @@ function EditorialView({
             )}
           </div>
 
-          {totalPages > 1 && (
-            <div
-              className="max-w-4xl mx-auto flex items-center justify-center gap-6 mt-8 text-sm"
-              style={{ fontFamily: 'Lora, serif', color: '#6b6050' }}
-            >
+          <div
+            className="max-w-4xl mx-auto flex items-center justify-center gap-6 mt-8 text-sm"
+            style={{ fontFamily: 'Lora, serif', color: '#6b6050' }}
+          >
+            {totalPages > 1 && (
               <button
                 disabled={(filters.page || 1) <= 1}
                 onClick={() =>
@@ -881,12 +883,16 @@ function EditorialView({
               >
                 &larr; Previous
               </button>
+            )}
+            {totalPages > 1 && (
               <span>
                 Page {filters.page || 1} of {totalPages}{' '}
                 <span className="text-xs" style={{ color: '#a09880' }}>
                   ({data?.total} total)
                 </span>
               </span>
+            )}
+            {totalPages > 1 && (
               <button
                 disabled={(filters.page || 1) >= totalPages}
                 onClick={() =>
@@ -897,8 +903,12 @@ function EditorialView({
               >
                 Next &rarr;
               </button>
-            </div>
-          )}
+            )}
+            <ExportButton
+              onExport={(format) => exportQuotes(filters, format)}
+              total={data?.total}
+            />
+          </div>
         </>
       )}
     </div>
@@ -1188,11 +1198,11 @@ function OrganicView({
             )}
           </div>
 
-          {totalPages > 1 && (
-            <div
-              className="flex items-center justify-center gap-4 mt-8"
-              style={{ fontFamily: 'Outfit, sans-serif' }}
-            >
+          <div
+            className="flex items-center justify-center gap-4 mt-8"
+            style={{ fontFamily: 'Outfit, sans-serif' }}
+          >
+            {totalPages > 1 && (
               <button
                 disabled={(filters.page || 1) <= 1}
                 onClick={() =>
@@ -1203,12 +1213,16 @@ function OrganicView({
               >
                 &larr; Previous
               </button>
+            )}
+            {totalPages > 1 && (
               <span className="text-sm" style={{ color: '#6b7b73' }}>
                 Page {filters.page || 1} of {totalPages}
                 <span className="text-xs ml-1" style={{ color: '#a0b0a0' }}>
                   ({data?.total})
                 </span>
               </span>
+            )}
+            {totalPages > 1 && (
               <button
                 disabled={(filters.page || 1) >= totalPages}
                 onClick={() =>
@@ -1219,8 +1233,12 @@ function OrganicView({
               >
                 Next &rarr;
               </button>
-            </div>
-          )}
+            )}
+            <ExportButton
+              onExport={(format) => exportQuotes(filters, format)}
+              total={data?.total}
+            />
+          </div>
         </>
       )}
     </div>
@@ -1375,12 +1393,12 @@ function ClassicView({
             </table>
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-sm text-slate-500">
-                {data?.total} total quotes
-              </span>
-              <div className="flex gap-2">
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-sm text-slate-500">
+              {data?.total} total quotes
+            </span>
+            <div className="flex items-center gap-2">
+              {totalPages > 1 && (
                 <button
                   disabled={(filters.page || 1) <= 1}
                   onClick={() =>
@@ -1390,9 +1408,13 @@ function ClassicView({
                 >
                   Previous
                 </button>
+              )}
+              {totalPages > 1 && (
                 <span className="px-3 py-1.5 text-sm text-slate-600">
                   Page {filters.page || 1} of {totalPages}
                 </span>
+              )}
+              {totalPages > 1 && (
                 <button
                   disabled={(filters.page || 1) >= totalPages}
                   onClick={() =>
@@ -1402,9 +1424,13 @@ function ClassicView({
                 >
                   Next
                 </button>
-              </div>
+              )}
+              <ExportButton
+                onExport={(format) => exportQuotes(filters, format)}
+                total={data?.total}
+              />
             </div>
-          )}
+          </div>
         </>
       )}
     </div>

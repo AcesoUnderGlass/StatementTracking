@@ -1,6 +1,11 @@
+import csv
+import json
+from datetime import date
+from io import StringIO
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -13,6 +18,34 @@ router = APIRouter(prefix="/api/people", tags=["people"])
 
 @router.get("", response_model=list)
 def list_people(search: Optional[str] = None, db: Session = Depends(get_db)):
+    results = _build_people_query(db, search=search).all()
+    return [_person_to_dict(person, count) for person, count in results]
+
+
+PEOPLE_CSV_COLUMNS = [
+    "id", "name", "type", "party", "role", "chamber",
+    "state", "employer", "notes", "quote_count", "created_at", "updated_at",
+]
+
+
+def _person_to_dict(person: Person, count: int) -> dict:
+    return {
+        "id": person.id,
+        "name": person.name,
+        "type": person.type.value if person.type else None,
+        "party": person.party.value if person.party else None,
+        "role": person.role,
+        "chamber": person.chamber.value if person.chamber else None,
+        "state": person.state,
+        "employer": person.employer,
+        "notes": person.notes,
+        "created_at": person.created_at.isoformat() if person.created_at else None,
+        "updated_at": person.updated_at.isoformat() if person.updated_at else None,
+        "quote_count": count,
+    }
+
+
+def _build_people_query(db: Session, *, search: Optional[str] = None):
     query = (
         db.query(Person, func.count(Quote.id).label("quote_count"))
         .outerjoin(
@@ -21,31 +54,40 @@ def list_people(search: Optional[str] = None, db: Session = Depends(get_db)):
         )
         .group_by(Person.id)
     )
-
     if search:
         query = query.filter(Person.name.ilike(f"%{search}%"))
+    return query.order_by(Person.name)
 
-    query = query.order_by(Person.name)
-    results = query.all()
 
-    out = []
-    for person, count in results:
-        d = {
-            "id": person.id,
-            "name": person.name,
-            "type": person.type.value if person.type else None,
-            "party": person.party.value if person.party else None,
-            "role": person.role,
-            "chamber": person.chamber.value if person.chamber else None,
-            "state": person.state,
-            "employer": person.employer,
-            "notes": person.notes,
-            "created_at": person.created_at.isoformat() if person.created_at else None,
-            "updated_at": person.updated_at.isoformat() if person.updated_at else None,
-            "quote_count": count,
-        }
-        out.append(d)
-    return out
+@router.get("/export")
+def export_people(
+    search: Optional[str] = None,
+    format: str = Query("csv"),
+    db: Session = Depends(get_db),
+):
+    results = _build_people_query(db, search=search).all()
+    rows = [_person_to_dict(person, count) for person, count in results]
+    today = date.today().isoformat()
+
+    if format == "json":
+        content = json.dumps(rows, indent=2)
+        return StreamingResponse(
+            StringIO(content),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=speakers_export_{today}.json"},
+        )
+
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(PEOPLE_CSV_COLUMNS)
+    for d in rows:
+        writer.writerow([str(d.get(col) or "") for col in PEOPLE_CSV_COLUMNS])
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=speakers_export_{today}.csv"},
+    )
 
 
 @router.get("/{person_id}")

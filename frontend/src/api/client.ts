@@ -156,6 +156,47 @@ export function deleteQuote(id: number): Promise<{ ok: boolean }> {
   return request(`/quotes/${id}`, { method: 'DELETE' });
 }
 
+// ── Export ───────────────────────────────────────────────────────────
+
+function _buildQuoteExportParams(filters: QuoteFilters, format: 'csv' | 'json'): URLSearchParams {
+  const params = new URLSearchParams();
+  const { jurisdiction_ids, topic_ids, page, page_size, ...rest } = filters;
+  Object.entries(rest).forEach(([key, val]) => {
+    if (val !== undefined && val !== null && val !== '') {
+      params.set(key, String(val));
+    }
+  });
+  if (jurisdiction_ids?.length) {
+    for (const id of jurisdiction_ids) {
+      params.append('jurisdiction_ids', String(id));
+    }
+  }
+  if (topic_ids?.length) {
+    for (const id of topic_ids) {
+      params.append('topic_ids', String(id));
+    }
+  }
+  params.set('format', format);
+  return params;
+}
+
+export function exportQuotes(filters: QuoteFilters, format: 'csv' | 'json'): void {
+  const params = _buildQuoteExportParams(filters, format);
+  const url = `${BASE}/quotes/export?${params}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.click();
+}
+
+export function exportPeople(search: string | undefined, format: 'csv' | 'json'): void {
+  const params = new URLSearchParams({ format });
+  if (search) params.set('search', search);
+  const url = `${BASE}/people/export?${params}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.click();
+}
+
 // ── Duplicate Detection ──────────────────────────────────────────────
 
 export function checkDuplicates(
