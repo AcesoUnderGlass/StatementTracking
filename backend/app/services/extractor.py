@@ -2,7 +2,6 @@ import json
 import os
 from typing import List
 
-import anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -330,6 +329,8 @@ def extract_quotes(
     source_type: str = "article",
     language: str = "en",
 ) -> List[dict]:
+    import anthropic
+
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise ExtractionError("ANTHROPIC_API_KEY is not set in environment.")

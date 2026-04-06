@@ -4,7 +4,6 @@ import json
 import os
 from typing import List, Optional
 
-import anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,6 +46,8 @@ def infer_jurisdiction_tags(
     article_url: Optional[str],
 ) -> List[str]:
     """Call Claude to get jurisdiction tag names for one quote."""
+    import anthropic
+
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise JurisdictionTagError("ANTHROPIC_API_KEY is not set in environment.")

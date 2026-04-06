@@ -16,8 +16,6 @@ from ..schemas import QuoteUpdate, DuplicateCheckRequest, SuggestTagsRequest, Su
 from ..services.dedup import check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
 from ..services.topic_quote import set_quote_topics
-from ..services.topic_tagger import infer_topic_tags, TopicTagError
-from ..services.jurisdiction_tagger import infer_jurisdiction_tags, JurisdictionTagError
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +80,9 @@ def check_duplicates(
 def suggest_tags(req: SuggestTagsRequest, db: Session = Depends(get_db)):
     """Infer jurisdiction and topic tags for a quote using the same Claude
     tagger services used during extraction."""
+    from ..services.topic_tagger import infer_topic_tags, TopicTagError
+    from ..services.jurisdiction_tagger import infer_jurisdiction_tags, JurisdictionTagError
+
     jurisdiction_rows = db.query(Jurisdiction).order_by(Jurisdiction.name).all()
     jurisdiction_block = "\n".join(
         f"- {r.name}" + (f" (abbreviation: {r.abbreviation})" if r.abbreviation else "")
@@ -273,7 +274,7 @@ def list_quotes(
             "page": page,
             "page_size": page_size,
         },
-        headers={"Cache-Control": "public, s-maxage=60, stale-while-revalidate=300"},
+        headers={"Cache-Control": "public, s-maxage=60, stale-while-revalidate=86400"},
     )
 
 CSV_COLUMNS = [
