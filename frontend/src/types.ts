@@ -8,7 +8,7 @@ export interface Person {
   party: string | null;
   role: string | null;
   chamber: string | null;
-  state: string | null;
+  locale: string | null;
   employer: string | null;
   notes: string | null;
   created_at: string;
@@ -22,7 +22,7 @@ export interface PersonCreate {
   party?: string | null;
   role?: string | null;
   chamber?: string | null;
-  state?: string | null;
+  locale?: string | null;
   employer?: string | null;
   notes?: string | null;
 }
@@ -127,7 +127,7 @@ export interface QuoteWithDetails {
     party: string | null;
     role: string | null;
     chamber: string | null;
-    state: string | null;
+    locale: string | null;
     employer: string | null;
   } | null;
   article: {
@@ -196,7 +196,7 @@ export interface PendingQuote {
     party: string | null;
     role: string | null;
     chamber: string | null;
-    state: string | null;
+    locale: string | null;
     employer: string | null;
   } | null;
 }

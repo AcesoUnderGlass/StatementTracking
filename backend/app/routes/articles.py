@@ -33,6 +33,7 @@ from ..schemas import (
 from ..services.dedup import find_duplicate, check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
 from ..services.speaker_aliases import canonical_speaker_name
+from ..services.speaker_metadata import enrich_person_from_extracted
 from ..services.topic_quote import set_quote_topics
 
 logger = logging.getLogger(__name__)
@@ -162,7 +163,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
                         party=Party(q.new_person.party) if q.new_person.party else None,
                         role=q.new_person.role,
                         chamber=Chamber(q.new_person.chamber) if q.new_person.chamber else None,
-                        state=q.new_person.state,
+                        locale=q.new_person.locale,
                         employer=q.new_person.employer,
                         notes=q.new_person.notes,
                     )
@@ -228,23 +229,29 @@ _FUZZY_THRESHOLD = 0.80
 _VALID_SPEAKER_TYPES = {t.value for t in SpeakerType}
 
 
-def _resolve_person(db: Session, name: str, speaker_type: str | None, cache: dict[str, int]) -> int:
+def _resolve_person(db: Session, eq: ExtractedQuote, cache: dict[str, int]) -> int:
     """Look up a Person by name or create one. Uses *cache* to avoid
-    redundant DB hits within a single request."""
-    name = canonical_speaker_name(name)
+    redundant DB hits within a single request. Merges speaker_title and inferred tags."""
+    name = canonical_speaker_name(eq.speaker_name)
     name_key = name.strip().lower()
     if name_key in cache:
+        person = db.get(Person, cache[name_key])
+        if person:
+            enrich_person_from_extracted(person, eq, created=False)
         return cache[name_key]
 
     existing = db.query(Person).filter(Person.name.ilike(name_key)).first()
     if existing:
+        enrich_person_from_extracted(existing, eq, created=False)
         cache[name_key] = existing.id
         return existing.id
 
-    st = speaker_type if speaker_type in _VALID_SPEAKER_TYPES else "elected"
+    st_raw = eq.speaker_type
+    st = st_raw if st_raw in _VALID_SPEAKER_TYPES else "elected"
     person = Person(name=name, type=SpeakerType(st))
     db.add(person)
     db.flush()
+    enrich_person_from_extracted(person, eq, created=True)
     cache[name_key] = person.id
     return person.id
 
@@ -279,7 +286,7 @@ def _save_bulk_quotes(
     person_cache: dict[str, int] = {}
     saved = 0
     for eq in extracted:
-        person_id = _resolve_person(db, eq.speaker_name, eq.speaker_type, person_cache)
+        person_id = _resolve_person(db, eq, person_cache)
         quote = Quote(
             person_id=person_id,
             article_id=article.id,
@@ -576,7 +583,7 @@ def add_quote_to_article(
                 party=Party(req.new_person.party) if req.new_person.party else None,
                 role=req.new_person.role,
                 chamber=Chamber(req.new_person.chamber) if req.new_person.chamber else None,
-                state=req.new_person.state,
+                locale=req.new_person.locale,
                 employer=req.new_person.employer,
                 notes=req.new_person.notes,
             )

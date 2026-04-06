@@ -110,7 +110,7 @@ export default function PersonProfile() {
     { key: 'role', label: 'Role' },
     { key: 'party', label: 'Party', type: 'select', options: PARTIES },
     { key: 'chamber', label: 'Chamber', type: 'select', options: CHAMBERS },
-    { key: 'state', label: 'State' },
+    { key: 'locale', label: 'Locale' },
     { key: 'employer', label: 'Employer' },
     { key: 'notes', label: 'Notes' },
   ];
@@ -135,7 +135,7 @@ export default function PersonProfile() {
           <h2 className="text-2xl font-bold text-slate-900">{person.name}</h2>
           <p className="text-sm text-slate-500">
             {person.role || person.type} · {person.party || 'No party'}{' '}
-            {person.state ? `· ${person.state}` : ''}
+            {person.locale ? `· ${person.locale}` : ''}
           </p>
         </div>
         {person.party && (

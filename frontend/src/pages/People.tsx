@@ -67,7 +67,7 @@ export default function People() {
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Type</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Party</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">State</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-500">Locale</th>
                 <th className="text-right px-4 py-3 font-medium text-slate-500">Quotes</th>
               </tr>
             </thead>
@@ -94,7 +94,7 @@ export default function People() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{p.role || '—'}</td>
-                  <td className="px-4 py-3 text-slate-500">{p.state || '—'}</td>
+                  <td className="px-4 py-3 text-slate-500">{p.locale || '—'}</td>
                   <td className="px-4 py-3 text-right font-medium text-slate-700">
                     {p.quote_count}
                   </td>

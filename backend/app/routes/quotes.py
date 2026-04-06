@@ -46,7 +46,7 @@ def _quote_to_dict(q: Quote) -> dict:
             "party": q.person.party.value if q.person.party else None,
             "role": q.person.role,
             "chamber": q.person.chamber.value if q.person.chamber else None,
-            "state": q.person.state,
+            "locale": q.person.locale,
             "employer": q.person.employer,
         } if q.person else None,
         "article": {
@@ -304,7 +304,7 @@ def _quote_to_csv_row(q: Quote) -> list[str]:
         p.get("party") or "",
         p.get("type") or "",
         p.get("role") or "",
-        p.get("state") or "",
+        p.get("locale") or "",
         a.get("title") or "",
         a.get("url") or "",
         a.get("publication") or "",
@@ -418,7 +418,7 @@ def update_quote(
                 party=Party(new_person_data["party"]) if new_person_data.get("party") else None,
                 role=new_person_data.get("role"),
                 chamber=Chamber(new_person_data["chamber"]) if new_person_data.get("chamber") else None,
-                state=new_person_data.get("state"),
+                locale=new_person_data.get("locale"),
                 employer=new_person_data.get("employer"),
                 notes=new_person_data.get("notes"),
             )

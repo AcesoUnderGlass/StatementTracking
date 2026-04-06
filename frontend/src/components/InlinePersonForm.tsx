@@ -26,7 +26,7 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
     party: null,
     role: null,
     chamber: null,
-    state: null,
+    locale: null,
     employer: null,
   });
 
@@ -37,7 +37,7 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
     if (field === 'type' && value && IS_ORG_TYPE(value as SpeakerType)) {
       next.party = null;
       next.chamber = null;
-      next.state = null;
+      next.locale = null;
       next.employer = null;
     }
     setForm((prev) => ({ ...prev, ...next }));
@@ -112,11 +112,11 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
             </select>
 
             <select
-              value={form.state || ''}
-              onChange={(e) => update('state', e.target.value)}
+              value={form.locale || ''}
+              onChange={(e) => update('locale', e.target.value)}
               className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
             >
-              <option value="">State...</option>
+              <option value="">Locale...</option>
               {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </>

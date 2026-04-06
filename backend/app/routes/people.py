@@ -24,7 +24,7 @@ def list_people(search: Optional[str] = None, db: Session = Depends(get_db)):
 
 PEOPLE_CSV_COLUMNS = [
     "id", "name", "type", "party", "role", "chamber",
-    "state", "employer", "notes", "quote_count", "created_at", "updated_at",
+    "locale", "employer", "notes", "quote_count", "created_at", "updated_at",
 ]
 
 
@@ -36,7 +36,7 @@ def _person_to_dict(person: Person, count: int) -> dict:
         "party": person.party.value if person.party else None,
         "role": person.role,
         "chamber": person.chamber.value if person.chamber else None,
-        "state": person.state,
+        "locale": person.locale,
         "employer": person.employer,
         "notes": person.notes,
         "created_at": person.created_at.isoformat() if person.created_at else None,
@@ -111,7 +111,7 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
         "party": person.party.value if person.party else None,
         "role": person.role,
         "chamber": person.chamber.value if person.chamber else None,
-        "state": person.state,
+        "locale": person.locale,
         "employer": person.employer,
         "notes": person.notes,
         "created_at": person.created_at.isoformat() if person.created_at else None,
@@ -174,7 +174,7 @@ def update_person(
         "party": person.party.value if person.party else None,
         "role": person.role,
         "chamber": person.chamber.value if person.chamber else None,
-        "state": person.state,
+        "locale": person.locale,
         "employer": person.employer,
         "notes": person.notes,
         "created_at": person.created_at.isoformat() if person.created_at else None,
