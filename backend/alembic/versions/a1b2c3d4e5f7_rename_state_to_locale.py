@@ -17,10 +17,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.alter_column("people", "state", new_column_name="locale")
-    op.alter_column("people", "locale", type_=sa.String(50), existing_type=sa.String(2))
+    with op.batch_alter_table("people") as batch_op:
+        batch_op.alter_column("state", new_column_name="locale", type_=sa.String(50), existing_type=sa.String(2))
 
 
 def downgrade() -> None:
-    op.alter_column("people", "locale", type_=sa.String(2), existing_type=sa.String(50))
-    op.alter_column("people", "locale", new_column_name="state")
+    with op.batch_alter_table("people") as batch_op:
+        batch_op.alter_column("locale", new_column_name="state", type_=sa.String(2), existing_type=sa.String(50))

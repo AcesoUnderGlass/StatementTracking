@@ -71,7 +71,7 @@ export default function PersonTypeahead({
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const people = await fetchPeople(value);
+        const people = await fetchPeople({ search: value });
         setResults(people);
         // Always keep the menu open after a search (2+ chars) so "No matches" + Create new speaker stay available.
         setOpen(true);

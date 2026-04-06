@@ -1,4 +1,4 @@
-"""Derive and apply speaker metadata (party, chamber, locale, role) from titles and a small registry."""
+"""Derive and apply speaker metadata (party, chamber, locales, role) from titles and a small registry."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .speaker_aliases import canonical_speaker_name
 class _Inferred(TypedDict, total=False):
     party: Party
     chamber: Chamber
-    locale: str
+    locales: list[str]
 
 
 # Lowercase canonical name → optional fields applied only when the corresponding
@@ -66,63 +66,63 @@ _SPEAKER_REGISTRY: dict[str, dict[str, Any]] = {
     "merrick garland":       _R(type=_GI, role="Attorney General"),
 
     # ── US Governors ───────────────────────────────────────────────
-    "gavin newsom":     _R(party=_D,   chamber=_Exe, locale="CA", role="Governor of California"),
-    "gov. gavin newsom": _R(party=_D,  chamber=_Exe, locale="CA", role="Governor of California"),
-    "ron desantis":     _R(party=_Rep, chamber=_Exe, locale="FL", role="Governor of Florida"),
-    "greg abbott":      _R(party=_Rep, chamber=_Exe, locale="TX", role="Governor of Texas"),
-    "wes moore":        _R(party=_D,   chamber=_Exe, locale="MD", role="Governor of Maryland"),
-    "bill lee":         _R(party=_Rep, chamber=_Exe, locale="TN", role="Governor of Tennessee"),
+    "gavin newsom":     _R(party=_D,   chamber=_Exe, locales=["CA"], role="Governor of California"),
+    "gov. gavin newsom": _R(party=_D,  chamber=_Exe, locales=["CA"], role="Governor of California"),
+    "ron desantis":     _R(party=_Rep, chamber=_Exe, locales=["FL"], role="Governor of Florida"),
+    "greg abbott":      _R(party=_Rep, chamber=_Exe, locales=["TX"], role="Governor of Texas"),
+    "wes moore":        _R(party=_D,   chamber=_Exe, locales=["MD"], role="Governor of Maryland"),
+    "bill lee":         _R(party=_Rep, chamber=_Exe, locales=["TN"], role="Governor of Tennessee"),
 
     # ── US Senators ────────────────────────────────────────────────
-    "bernie sanders":      _R(party=_I,   chamber=_Sen, locale="VT", role="Senator (I-VT)"),
-    "sen. bernie sanders": _R(party=_I,   chamber=_Sen, locale="VT", role="Senator (I-VT)"),
-    "charles schumer":     _R(party=_D,   chamber=_Sen, locale="NY", role="Senate Majority Leader"),
-    "chuck schumer":       _R(party=_D,   chamber=_Sen, locale="NY", role="Senate Majority Leader"),
-    "ted cruz":            _R(party=_Rep, chamber=_Sen, locale="TX", role="Senator (R-TX)"),
-    "tom cotton":          _R(party=_Rep, chamber=_Sen, locale="AR", role="Senator (R-AR)"),
-    "sheldon whitehouse":  _R(party=_D,   chamber=_Sen, locale="RI", role="Senator (D-RI)"),
-    "maria cantwell":      _R(party=_D,   chamber=_Sen, locale="WA", role="Senator (D-WA)"),
-    "gary peters":         _R(party=_D,   chamber=_Sen, locale="MI", role="Senator (D-MI)"),
-    "mike rounds":         _R(party=_Rep, chamber=_Sen, locale="SD", role="Senator (R-SD)"),
-    "sen. josh hawley":    _R(party=_Rep, chamber=_Sen, locale="MO", role="Senator (R-MO)"),
-    "sen. richard blumenthal": _R(party=_D, chamber=_Sen, locale="CT", role="Senator (D-CT)"),
-    "sen. warner":         _R(party=_D,   chamber=_Sen, locale="VA", role="Senator (D-VA)"),
+    "bernie sanders":      _R(party=_I,   chamber=_Sen, locales=["VT"], role="Senator (I-VT)"),
+    "sen. bernie sanders": _R(party=_I,   chamber=_Sen, locales=["VT"], role="Senator (I-VT)"),
+    "charles schumer":     _R(party=_D,   chamber=_Sen, locales=["NY"], role="Senate Majority Leader"),
+    "chuck schumer":       _R(party=_D,   chamber=_Sen, locales=["NY"], role="Senate Majority Leader"),
+    "ted cruz":            _R(party=_Rep, chamber=_Sen, locales=["TX"], role="Senator (R-TX)"),
+    "tom cotton":          _R(party=_Rep, chamber=_Sen, locales=["AR"], role="Senator (R-AR)"),
+    "sheldon whitehouse":  _R(party=_D,   chamber=_Sen, locales=["RI"], role="Senator (D-RI)"),
+    "maria cantwell":      _R(party=_D,   chamber=_Sen, locales=["WA"], role="Senator (D-WA)"),
+    "gary peters":         _R(party=_D,   chamber=_Sen, locales=["MI"], role="Senator (D-MI)"),
+    "mike rounds":         _R(party=_Rep, chamber=_Sen, locales=["SD"], role="Senator (R-SD)"),
+    "sen. josh hawley":    _R(party=_Rep, chamber=_Sen, locales=["MO"], role="Senator (R-MO)"),
+    "sen. richard blumenthal": _R(party=_D, chamber=_Sen, locales=["CT"], role="Senator (D-CT)"),
+    "sen. warner":         _R(party=_D,   chamber=_Sen, locales=["VA"], role="Senator (D-VA)"),
 
     # ── US House ───────────────────────────────────────────────────
-    "mike johnson":                _R(party=_Rep, chamber=_Hou, locale="LA", role="Speaker of the House"),
-    "nancy mace":                  _R(party=_Rep, chamber=_Hou, locale="SC", role="Representative (R-SC)"),
-    "hakeem jeffries":             _R(party=_D,   chamber=_Hou, locale="NY", role="House Minority Leader"),
-    "steve scalise":               _R(party=_Rep, chamber=_Hou, locale="LA", role="House Majority Leader"),
-    "ted lieu":                    _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "josh gottheimer":             _R(party=_D,   chamber=_Hou, locale="NJ", role="Representative (D-NJ)"),
-    "mike gallagher":              _R(party=_Rep, chamber=_Hou, locale="WI", role="Representative (R-WI)"),
-    "rep. byron donalds":          _R(party=_Rep, chamber=_Hou, locale="FL", role="Representative (R-FL)"),
-    "rep. david schweikert":       _R(party=_Rep, chamber=_Hou, locale="AZ", role="Representative (R-AZ)"),
-    "rep. ro khanna":              _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "chairwoman carolyn b. maloney": _R(party=_D, chamber=_Hou, locale="NY", role="Chairwoman, House Oversight Committee"),
-    "brett guthrie":               _R(party=_Rep, chamber=_Hou, locale="KY", role="Representative (R-KY)"),
-    "ami bera":                    _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "bill foster":                 _R(party=_D,   chamber=_Hou, locale="IL", role="Representative (D-IL)"),
-    "brittany pettersen":          _R(party=_D,   chamber=_Hou, locale="CO", role="Representative (D-CO)"),
-    "don beyer":                   _R(party=_D,   chamber=_Hou, locale="VA", role="Representative (D-VA)"),
-    "haley stevens":               _R(party=_D,   chamber=_Hou, locale="MI", role="Representative (D-MI)"),
-    "scott franklin":              _R(party=_Rep, chamber=_Hou, locale="FL", role="Representative (R-FL)"),
-    "sara jacobs":                 _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "sam liccardo":                _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "zoe lofgren":                 _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "gregory meeks":               _R(party=_D,   chamber=_Hou, locale="NY", role="Representative (D-NY)"),
-    "jay obernolte":               _R(party=_Rep, chamber=_Hou, locale="CA", role="Representative (R-CA)"),
-    "brian babin":                 _R(party=_Rep, chamber=_Hou, locale="TX", role="Representative (R-TX)"),
-    "brian mast":                  _R(party=_Rep, chamber=_Hou, locale="FL", role="Representative (R-FL)"),
-    "rep. eli crane":              _R(party=_Rep, chamber=_Hou, locale="AZ", role="Representative (R-AZ)"),
-    "rep. nathaniel moran":        _R(party=_Rep, chamber=_Hou, locale="TX", role="Representative (R-TX)"),
-    "nathaniel moran":             _R(party=_Rep, chamber=_Hou, locale="TX", role="Representative (R-TX)"),
-    "ritchie torres":              _R(party=_D,   chamber=_Hou, locale="NY", role="Representative (D-NY)"),
-    "seth moulton":                _R(party=_D,   chamber=_Hou, locale="MA", role="Representative (D-MA)"),
-    "eric burlison":               _R(party=_Rep, chamber=_Hou, locale="MO", role="Representative (R-MO)"),
-    "raja krishnamoorthi":         _R(party=_D,   chamber=_Hou, locale="IL", role="Representative (D-IL)"),
-    "ted w. lieu":                 _R(party=_D,   chamber=_Hou, locale="CA", role="Representative (D-CA)"),
-    "jill tokuda":                 _R(party=_D,   chamber=_Hou, locale="HI", role="Representative (D-HI)"),
+    "mike johnson":                _R(party=_Rep, chamber=_Hou, locales=["LA"], role="Speaker of the House"),
+    "nancy mace":                  _R(party=_Rep, chamber=_Hou, locales=["SC"], role="Representative (R-SC)"),
+    "hakeem jeffries":             _R(party=_D,   chamber=_Hou, locales=["NY"], role="House Minority Leader"),
+    "steve scalise":               _R(party=_Rep, chamber=_Hou, locales=["LA"], role="House Majority Leader"),
+    "ted lieu":                    _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "josh gottheimer":             _R(party=_D,   chamber=_Hou, locales=["NJ"], role="Representative (D-NJ)"),
+    "mike gallagher":              _R(party=_Rep, chamber=_Hou, locales=["WI"], role="Representative (R-WI)"),
+    "rep. byron donalds":          _R(party=_Rep, chamber=_Hou, locales=["FL"], role="Representative (R-FL)"),
+    "rep. david schweikert":       _R(party=_Rep, chamber=_Hou, locales=["AZ"], role="Representative (R-AZ)"),
+    "rep. ro khanna":              _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "chairwoman carolyn b. maloney": _R(party=_D, chamber=_Hou, locales=["NY"], role="Chairwoman, House Oversight Committee"),
+    "brett guthrie":               _R(party=_Rep, chamber=_Hou, locales=["KY"], role="Representative (R-KY)"),
+    "ami bera":                    _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "bill foster":                 _R(party=_D,   chamber=_Hou, locales=["IL"], role="Representative (D-IL)"),
+    "brittany pettersen":          _R(party=_D,   chamber=_Hou, locales=["CO"], role="Representative (D-CO)"),
+    "don beyer":                   _R(party=_D,   chamber=_Hou, locales=["VA"], role="Representative (D-VA)"),
+    "haley stevens":               _R(party=_D,   chamber=_Hou, locales=["MI"], role="Representative (D-MI)"),
+    "scott franklin":              _R(party=_Rep, chamber=_Hou, locales=["FL"], role="Representative (R-FL)"),
+    "sara jacobs":                 _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "sam liccardo":                _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "zoe lofgren":                 _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "gregory meeks":               _R(party=_D,   chamber=_Hou, locales=["NY"], role="Representative (D-NY)"),
+    "jay obernolte":               _R(party=_Rep, chamber=_Hou, locales=["CA"], role="Representative (R-CA)"),
+    "brian babin":                 _R(party=_Rep, chamber=_Hou, locales=["TX"], role="Representative (R-TX)"),
+    "brian mast":                  _R(party=_Rep, chamber=_Hou, locales=["FL"], role="Representative (R-FL)"),
+    "rep. eli crane":              _R(party=_Rep, chamber=_Hou, locales=["AZ"], role="Representative (R-AZ)"),
+    "rep. nathaniel moran":        _R(party=_Rep, chamber=_Hou, locales=["TX"], role="Representative (R-TX)"),
+    "nathaniel moran":             _R(party=_Rep, chamber=_Hou, locales=["TX"], role="Representative (R-TX)"),
+    "ritchie torres":              _R(party=_D,   chamber=_Hou, locales=["NY"], role="Representative (D-NY)"),
+    "seth moulton":                _R(party=_D,   chamber=_Hou, locales=["MA"], role="Representative (D-MA)"),
+    "eric burlison":               _R(party=_Rep, chamber=_Hou, locales=["MO"], role="Representative (R-MO)"),
+    "raja krishnamoorthi":         _R(party=_D,   chamber=_Hou, locales=["IL"], role="Representative (D-IL)"),
+    "ted w. lieu":                 _R(party=_D,   chamber=_Hou, locales=["CA"], role="Representative (D-CA)"),
+    "jill tokuda":                 _R(party=_D,   chamber=_Hou, locales=["HI"], role="Representative (D-HI)"),
     "rick nun":                    _R(party=_Rep, chamber=_Hou, role="Representative"),
     "martin heinrich and mike rounds": _R(type=_GI, role="Senate AI Caucus co-chairs"),
 
@@ -186,7 +186,7 @@ def _party_from_paren_letter(letter: str) -> Party | None:
 
 
 def infer_from_title(title: str | None) -> _Inferred:
-    """Best-effort party, chamber, and locale from a title string (e.g. U.S. Senator (D-CA))."""
+    """Best-effort party, chamber, and locales from a title string (e.g. U.S. Senator (D-CA))."""
     if not title or not str(title).strip():
         return {}
     t = str(title).strip()
@@ -198,7 +198,7 @@ def infer_from_title(title: str | None) -> _Inferred:
         p = _party_from_paren_letter(m.group(1))
         if p is not None:
             out["party"] = p
-        out["locale"] = m.group(2).upper()
+        out["locales"] = [m.group(2).upper()]
 
     # "Rep., D-Ill." / "D-Texas" / "R-Ohio" (AP abbreviation style)
     if "party" not in out:
@@ -256,8 +256,8 @@ def enforce_org_person_constraints(person: Person) -> bool:
     if person.chamber is not None:
         person.chamber = None
         changed = True
-    if person.locale is not None:
-        person.locale = None
+    if person.locales:
+        person.locales = []
         changed = True
     return changed
 
@@ -271,11 +271,11 @@ def apply_registry(person: Person, *, created: bool = False) -> bool:
     if "type" in row and person.type != row["type"]:
         person.type = row["type"]
         changed = True
-    for key in ("party", "chamber", "locale", "role", "employer", "notes"):
+    for key in ("party", "chamber", "locales", "role", "employer", "notes"):
         if key not in row:
             continue
         cur = getattr(person, key)
-        if cur is None and row[key] is not None:
+        if not cur and row[key]:
             setattr(person, key, row[key])
             changed = True
     return changed
@@ -309,8 +309,8 @@ def enrich_person_from_extracted(person: Person, eq: Any, *, created: bool = Fal
     if person.chamber is None and "chamber" in inferred:
         person.chamber = inferred["chamber"]
         changed = True
-    if person.locale is None and "locale" in inferred:
-        person.locale = inferred["locale"]
+    if not person.locales and "locales" in inferred:
+        person.locales = inferred["locales"]
         changed = True
 
     return changed
@@ -332,7 +332,7 @@ def enrich_person_from_existing_role(person: Person) -> bool:
     if person.chamber is None and "chamber" in inferred:
         person.chamber = inferred["chamber"]
         changed = True
-    if person.locale is None and "locale" in inferred:
-        person.locale = inferred["locale"]
+    if not person.locales and "locales" in inferred:
+        person.locales = inferred["locales"]
         changed = True
     return changed

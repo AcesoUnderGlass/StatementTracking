@@ -21,7 +21,7 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
     party: null,
     role: null,
     chamber: null,
-    locale: null,
+    locales: [],
     employer: null,
   });
 
@@ -32,7 +32,7 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
     if (field === 'type' && value && IS_ORG_TYPE(value as SpeakerType)) {
       next.party = null;
       next.chamber = null;
-      next.locale = null;
+      next.locales = [];
       next.employer = null;
     }
     setForm((prev) => ({ ...prev, ...next }));
@@ -107,8 +107,8 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
             </select>
 
             <LocaleSelect
-              value={form.locale || null}
-              onChange={(v) => update('locale', v)}
+              value={form.locales || []}
+              onChange={(v) => setForm((prev) => ({ ...prev, locales: v }))}
               compact
             />
           </>

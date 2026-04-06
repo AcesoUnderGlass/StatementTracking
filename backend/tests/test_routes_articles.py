@@ -48,10 +48,10 @@ def _save_payload(person_id=None, new_person=None, quotes=None, url=None):
 
 
 def _new_person(name="Sen. Jane Doe", type="elected", party="Democrat",
-                role="U.S. Senator", chamber="Senate", locale="NY"):
+                role="U.S. Senator", chamber="Senate", locales=None):
     return {
         "name": name, "type": type, "party": party,
-        "role": role, "chamber": chamber, "locale": locale,
+        "role": role, "chamber": chamber, "locales": locales or ["NY"],
     }
 
 
@@ -199,7 +199,7 @@ class TestArticlesSave:
         person = db_session.query(Person).filter(Person.name == "Sen. Jane Doe").first()
         assert person is not None
         assert person.type.value == "elected"
-        assert person.locale == "NY"
+        assert person.locales == ["NY"]
 
     async def test_same_new_person_deduped_across_quotes(self, client, db_session):
         person_data = _new_person()

@@ -17,14 +17,25 @@ router = APIRouter(prefix="/api/people", tags=["people"])
 
 
 @router.get("", response_model=list)
-def list_people(search: Optional[str] = None, db: Session = Depends(get_db)):
-    results = _build_people_query(db, search=search).all()
+def list_people(
+    search: Optional[str] = None,
+    type: Optional[str] = None,
+    party: Optional[str] = None,
+    locale: Optional[str] = None,
+    sort_by: Optional[str] = Query(None, pattern="^(name|quote_count|created_at)$"),
+    sort_dir: Optional[str] = Query("asc", pattern="^(asc|desc)$"),
+    db: Session = Depends(get_db),
+):
+    results = _build_people_query(
+        db, search=search, type=type, party=party, locale=locale,
+        sort_by=sort_by, sort_dir=sort_dir,
+    ).all()
     return [_person_to_dict(person, count) for person, count in results]
 
 
 PEOPLE_CSV_COLUMNS = [
     "id", "name", "type", "party", "role", "chamber",
-    "locale", "employer", "notes", "quote_count", "created_at", "updated_at",
+    "locales", "employer", "notes", "quote_count", "created_at", "updated_at",
 ]
 
 
@@ -36,7 +47,7 @@ def _person_to_dict(person: Person, count: int) -> dict:
         "party": person.party.value if person.party else None,
         "role": person.role,
         "chamber": person.chamber.value if person.chamber else None,
-        "locale": person.locale,
+        "locales": person.locales or [],
         "employer": person.employer,
         "notes": person.notes,
         "created_at": person.created_at.isoformat() if person.created_at else None,
@@ -45,9 +56,19 @@ def _person_to_dict(person: Person, count: int) -> dict:
     }
 
 
-def _build_people_query(db: Session, *, search: Optional[str] = None):
+def _build_people_query(
+    db: Session,
+    *,
+    search: Optional[str] = None,
+    type: Optional[str] = None,
+    party: Optional[str] = None,
+    locale: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: Optional[str] = "asc",
+):
+    quote_count = func.count(Quote.id).label("quote_count")
     query = (
-        db.query(Person, func.count(Quote.id).label("quote_count"))
+        db.query(Person, quote_count)
         .outerjoin(
             Quote,
             (Quote.person_id == Person.id) & (Quote.is_duplicate == False),  # noqa: E712
@@ -56,16 +77,42 @@ def _build_people_query(db: Session, *, search: Optional[str] = None):
     )
     if search:
         query = query.filter(Person.name.ilike(f"%{search}%"))
-    return query.order_by(Person.name)
+    if type:
+        query = query.filter(Person.type == SpeakerType(type))
+    if party:
+        query = query.filter(Person.party == Party(party))
+    if locale:
+        query = query.filter(Person.locales.contains([locale]))
+
+    order_col = Person.name
+    if sort_by == "quote_count":
+        order_col = quote_count
+    elif sort_by == "created_at":
+        order_col = Person.created_at
+
+    if sort_dir == "desc":
+        query = query.order_by(order_col.desc())
+    else:
+        query = query.order_by(order_col.asc())
+
+    return query
 
 
 @router.get("/export")
 def export_people(
     search: Optional[str] = None,
+    type: Optional[str] = None,
+    party: Optional[str] = None,
+    locale: Optional[str] = None,
+    sort_by: Optional[str] = Query(None, pattern="^(name|quote_count|created_at)$"),
+    sort_dir: Optional[str] = Query("asc", pattern="^(asc|desc)$"),
     format: str = Query("csv"),
     db: Session = Depends(get_db),
 ):
-    results = _build_people_query(db, search=search).all()
+    results = _build_people_query(
+        db, search=search, type=type, party=party, locale=locale,
+        sort_by=sort_by, sort_dir=sort_dir,
+    ).all()
     rows = [_person_to_dict(person, count) for person, count in results]
     today = date.today().isoformat()
 
@@ -81,7 +128,14 @@ def export_people(
     writer = csv.writer(buf)
     writer.writerow(PEOPLE_CSV_COLUMNS)
     for d in rows:
-        writer.writerow([str(d.get(col) or "") for col in PEOPLE_CSV_COLUMNS])
+        row_vals = []
+        for col in PEOPLE_CSV_COLUMNS:
+            v = d.get(col)
+            if col == "locales":
+                row_vals.append("; ".join(v) if v else "")
+            else:
+                row_vals.append(str(v) if v else "")
+        writer.writerow(row_vals)
     buf.seek(0)
     return StreamingResponse(
         buf,
@@ -111,7 +165,7 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
         "party": person.party.value if person.party else None,
         "role": person.role,
         "chamber": person.chamber.value if person.chamber else None,
-        "locale": person.locale,
+        "locales": person.locales or [],
         "employer": person.employer,
         "notes": person.notes,
         "created_at": person.created_at.isoformat() if person.created_at else None,
@@ -174,7 +228,7 @@ def update_person(
         "party": person.party.value if person.party else None,
         "role": person.role,
         "chamber": person.chamber.value if person.chamber else None,
-        "locale": person.locale,
+        "locales": person.locales or [],
         "employer": person.employer,
         "notes": person.notes,
         "created_at": person.created_at.isoformat() if person.created_at else None,

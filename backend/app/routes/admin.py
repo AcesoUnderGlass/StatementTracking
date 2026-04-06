@@ -118,7 +118,7 @@ async def import_db(file: UploadFile = File(...), db: Session = Depends(get_db))
             party=row.get("party"),
             role=row.get("role"),
             chamber=row.get("chamber"),
-            locale=row.get("locale"),
+            locales=row.get("locales") or ([row["locale"]] if row.get("locale") else []),
             employer=row.get("employer"),
             notes=row.get("notes"),
             created_at=_parse_date(row.get("created_at")),

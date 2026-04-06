@@ -46,7 +46,7 @@ def _quote_to_dict(q: Quote) -> dict:
             "party": q.person.party.value if q.person.party else None,
             "role": q.person.role,
             "chamber": q.person.chamber.value if q.person.chamber else None,
-            "locale": q.person.locale,
+            "locales": q.person.locales or [],
             "employer": q.person.employer,
         } if q.person else None,
         "article": {
@@ -280,7 +280,7 @@ def list_quotes(
 CSV_COLUMNS = [
     "id", "quote_text", "context", "date_said", "date_recorded",
     "review_status", "created_at", "is_duplicate", "duplicate_of_id",
-    "speaker_name", "speaker_party", "speaker_type", "speaker_role", "speaker_state",
+    "speaker_name", "speaker_party", "speaker_type", "speaker_role", "speaker_locales",
     "article_title", "article_url", "article_publication", "article_published_date",
     "jurisdictions", "topics",
 ]
@@ -304,7 +304,7 @@ def _quote_to_csv_row(q: Quote) -> list[str]:
         p.get("party") or "",
         p.get("type") or "",
         p.get("role") or "",
-        p.get("locale") or "",
+        "; ".join(p.get("locales") or []),
         a.get("title") or "",
         a.get("url") or "",
         a.get("publication") or "",
@@ -418,7 +418,7 @@ def update_quote(
                 party=Party(new_person_data["party"]) if new_person_data.get("party") else None,
                 role=new_person_data.get("role"),
                 chamber=Chamber(new_person_data["chamber"]) if new_person_data.get("chamber") else None,
-                locale=new_person_data.get("locale"),
+                locales=new_person_data.get("locales") or [],
                 employer=new_person_data.get("employer"),
                 notes=new_person_data.get("notes"),
             )

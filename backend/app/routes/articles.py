@@ -163,7 +163,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
                         party=Party(q.new_person.party) if q.new_person.party else None,
                         role=q.new_person.role,
                         chamber=Chamber(q.new_person.chamber) if q.new_person.chamber else None,
-                        locale=q.new_person.locale,
+                        locales=q.new_person.locales or [],
                         employer=q.new_person.employer,
                         notes=q.new_person.notes,
                     )
@@ -583,7 +583,7 @@ def add_quote_to_article(
                 party=Party(req.new_person.party) if req.new_person.party else None,
                 role=req.new_person.role,
                 chamber=Chamber(req.new_person.chamber) if req.new_person.chamber else None,
-                locale=req.new_person.locale,
+                locales=req.new_person.locales or [],
                 employer=req.new_person.employer,
                 notes=req.new_person.notes,
             )

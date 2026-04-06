@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import List, Optional
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, String,
+    Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, JSON, String,
     Table, Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -79,7 +79,7 @@ class Person(Base):
     party: Mapped[Optional[Party]] = mapped_column(Enum(Party), nullable=True)
     role: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     chamber: Mapped[Optional[Chamber]] = mapped_column(Enum(Chamber), nullable=True)
-    locale: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    locales: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     employer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

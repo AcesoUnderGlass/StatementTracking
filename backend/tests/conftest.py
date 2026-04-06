@@ -130,7 +130,7 @@ def sample_person(db_session):
         party=Party.democrat,
         role="U.S. Senator",
         chamber=Chamber.senate,
-        locale="CA",
+        locales=["CA"],
     )
     staff = Person(
         name="David Nakamura",

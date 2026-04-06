@@ -1,32 +1,63 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { fetchPeople, exportPeople } from '../api/client';
+import { fetchPeople, exportPeople, type PeopleFilters } from '../api/client';
 import ExportButton from '../components/ExportButton';
-import { LocaleChip } from '../components/LocaleSelect';
+import { LocaleChip, LocaleFilterSelect } from '../components/LocaleSelect';
+
+const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
+const TYPES: { value: string; label: string }[] = [
+  { value: 'elected', label: 'Elected' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'think_tank', label: 'Think Tank' },
+  { value: 'gov_inst', label: 'Gov. Institution' },
+];
+
+const partyColor: Record<string, string> = {
+  Democrat: 'bg-blue-100 text-blue-700',
+  Republican: 'bg-red-100 text-red-700',
+  Independent: 'bg-purple-100 text-purple-700',
+};
+
+function useUrlPeopleFilters(): [PeopleFilters, (f: PeopleFilters) => void] {
+  const [params, setParams] = useSearchParams();
+
+  const filters: PeopleFilters = {
+    search: params.get('search') || undefined,
+    type: params.get('type') || undefined,
+    party: params.get('party') || undefined,
+    locale: params.get('locale') || undefined,
+    sort_by: (params.get('sort_by') as PeopleFilters['sort_by']) || undefined,
+    sort_dir: (params.get('sort_dir') as PeopleFilters['sort_dir']) || undefined,
+  };
+
+  function setFilters(next: PeopleFilters) {
+    const p = new URLSearchParams();
+    if (next.search) p.set('search', next.search);
+    if (next.type) p.set('type', next.type);
+    if (next.party) p.set('party', next.party);
+    if (next.locale) p.set('locale', next.locale);
+    if (next.sort_by) p.set('sort_by', next.sort_by);
+    if (next.sort_dir) p.set('sort_dir', next.sort_dir);
+    setParams(p, { replace: true });
+  }
+
+  return [filters, setFilters];
+}
 
 export default function People() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const search = searchParams.get('search') || '';
-  const setSearch = (v: string) => setSearchParams(v ? { search: v } : {}, { replace: true });
+  const [filters, setFilters] = useUrlPeopleFilters();
+
+  function update(field: keyof PeopleFilters, value: string) {
+    setFilters({ ...filters, [field]: value || undefined });
+  }
 
   const { data: people, isLoading, error } = useQuery({
-    queryKey: ['people', search],
-    queryFn: () => fetchPeople(search || undefined),
+    queryKey: ['people', filters],
+    queryFn: () => fetchPeople(filters),
   });
 
-  const partyColor: Record<string, string> = {
-    Democrat: 'bg-blue-100 text-blue-700',
-    Republican: 'bg-red-100 text-red-700',
-    Independent: 'bg-purple-100 text-purple-700',
-  };
-
-  const typeLabel: Record<string, string> = {
-    elected: 'Elected',
-    staff: 'Staff',
-    think_tank: 'Think Tank',
-    gov_inst: 'Gov. Institution',
-  };
+  const hasFilters = Object.values(filters).some((v) => v !== undefined && v !== '');
 
   return (
     <div>
@@ -35,18 +66,88 @@ export default function People() {
         All speakers and institutions tracked in the system.
       </p>
 
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <input
           type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={filters.search || ''}
+          onChange={(e) => update('search', e.target.value)}
           placeholder="Search by name..."
-          className="w-72 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
+
+        <select
+          value={filters.party || ''}
+          onChange={(e) => update('party', e.target.value)}
+          className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All parties</option>
+          {PARTIES.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+
+        <select
+          value={filters.type || ''}
+          onChange={(e) => update('type', e.target.value)}
+          className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All types</option>
+          {TYPES.map((t) => (
+            <option key={t.value} value={t.value}>{t.label}</option>
+          ))}
+        </select>
+
+        <LocaleFilterSelect
+          value={filters.locale || ''}
+          onChange={(v) => update('locale', v)}
+        />
+
+        <div className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 shrink-0">Sort</span>
+          <select
+            value={filters.sort_by || ''}
+            onChange={(e) =>
+              setFilters({
+                ...filters,
+                sort_by: (e.target.value || undefined) as PeopleFilters['sort_by'],
+                sort_dir: e.target.value ? (filters.sort_dir || 'asc') : undefined,
+              })
+            }
+            className="px-2 py-1 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Name</option>
+            <option value="quote_count">Quote Count</option>
+            <option value="created_at">Date Added</option>
+          </select>
+          <button
+            type="button"
+            onClick={() =>
+              setFilters({
+                ...filters,
+                sort_dir: (filters.sort_dir || 'asc') === 'asc' ? 'desc' : 'asc',
+              })
+            }
+            className="px-1.5 py-1 text-sm text-slate-500 hover:text-slate-800 transition"
+            title={`Currently: ${(filters.sort_dir || 'asc') === 'asc' ? 'A → Z / Low → High' : 'Z → A / High → Low'}`}
+          >
+            {(filters.sort_dir || 'asc') === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
+
         <ExportButton
-          onExport={(format) => exportPeople(search || undefined, format)}
+          onExport={(format) => exportPeople(filters, format)}
           total={people?.length}
         />
+
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {error && (
@@ -68,7 +169,7 @@ export default function People() {
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Type</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Party</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Locale</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-500">Locales</th>
                 <th className="text-right px-4 py-3 font-medium text-slate-500">Quotes</th>
               </tr>
             </thead>
@@ -80,7 +181,9 @@ export default function People() {
                   className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
                 >
                   <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
-                  <td className="px-4 py-3 text-slate-500">{typeLabel[p.type] || p.type}</td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {TYPES.find((t) => t.value === p.type)?.label || p.type}
+                  </td>
                   <td className="px-4 py-3">
                     {p.party ? (
                       <span
@@ -96,7 +199,13 @@ export default function People() {
                   </td>
                   <td className="px-4 py-3 text-slate-500">{p.role || '—'}</td>
                   <td className="px-4 py-3 text-slate-500">
-                    {p.locale ? <LocaleChip value={p.locale} /> : '—'}
+                    {p.locales?.length > 0 ? (
+                      <span className="flex flex-wrap gap-1">
+                        {p.locales.map((l: string) => (
+                          <LocaleChip key={l} value={l} />
+                        ))}
+                      </span>
+                    ) : '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-slate-700">
                     {p.quote_count}

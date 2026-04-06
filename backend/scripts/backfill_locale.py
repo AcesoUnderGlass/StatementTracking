@@ -377,7 +377,7 @@ def main() -> None:
         unresolved = []
 
         for person in people:
-            if person.locale:
+            if person.locales:
                 skipped_has_value += 1
                 continue
 
@@ -397,7 +397,7 @@ def main() -> None:
                 unresolved.append(person)
                 continue
 
-            person.locale = locale
+            person.locales = [locale]
             updated += 1
             print(f"  id={person.id:>4} {person.name!r:50s} → {locale}")
 

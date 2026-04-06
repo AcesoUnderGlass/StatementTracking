@@ -12,7 +12,7 @@ class PersonBase(BaseModel):
     party: Optional[str] = None
     role: Optional[str] = None
     chamber: Optional[str] = None
-    locale: Optional[str] = None
+    locales: List[str] = Field(default_factory=list)
     employer: Optional[str] = None
     notes: Optional[str] = None
 
@@ -27,7 +27,7 @@ class PersonUpdate(BaseModel):
     party: Optional[str] = None
     role: Optional[str] = None
     chamber: Optional[str] = None
-    locale: Optional[str] = None
+    locales: Optional[List[str]] = None
     employer: Optional[str] = None
     notes: Optional[str] = None
 

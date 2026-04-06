@@ -31,7 +31,7 @@ def _pending_quote_dict(q: Quote) -> dict:
             "party": q.person.party.value if q.person.party else None,
             "role": q.person.role,
             "chamber": q.person.chamber.value if q.person.chamber else None,
-            "locale": q.person.locale,
+            "locales": q.person.locales or [],
             "employer": q.person.employer,
         } if q.person else None,
     }

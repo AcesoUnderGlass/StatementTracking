@@ -57,9 +57,25 @@ export function saveArticle(data: SaveRequest): Promise<SaveResponse> {
 
 // ── People ───────────────────────────────────────────────────────────
 
-export function fetchPeople(search?: string): Promise<Person[]> {
-  const params = search ? `?search=${encodeURIComponent(search)}` : '';
-  return request(`/people${params}`);
+export interface PeopleFilters {
+  search?: string;
+  type?: string;
+  party?: string;
+  locale?: string;
+  sort_by?: 'name' | 'quote_count' | 'created_at';
+  sort_dir?: 'asc' | 'desc';
+}
+
+export function fetchPeople(filters: PeopleFilters = {}): Promise<Person[]> {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.type) params.set('type', filters.type);
+  if (filters.party) params.set('party', filters.party);
+  if (filters.locale) params.set('locale', filters.locale);
+  if (filters.sort_by) params.set('sort_by', filters.sort_by);
+  if (filters.sort_dir) params.set('sort_dir', filters.sort_dir);
+  const qs = params.toString();
+  return request(`/people${qs ? `?${qs}` : ''}`);
 }
 
 export function fetchPerson(id: number): Promise<PersonDetail> {
@@ -188,9 +204,14 @@ export function exportQuotes(filters: QuoteFilters, format: 'csv' | 'json'): voi
   a.click();
 }
 
-export function exportPeople(search: string | undefined, format: 'csv' | 'json'): void {
+export function exportPeople(filters: PeopleFilters, format: 'csv' | 'json'): void {
   const params = new URLSearchParams({ format });
-  if (search) params.set('search', search);
+  if (filters.search) params.set('search', filters.search);
+  if (filters.type) params.set('type', filters.type);
+  if (filters.party) params.set('party', filters.party);
+  if (filters.locale) params.set('locale', filters.locale);
+  if (filters.sort_by) params.set('sort_by', filters.sort_by);
+  if (filters.sort_dir) params.set('sort_dir', filters.sort_dir);
   const url = `${BASE}/people/export?${params}`;
   const a = document.createElement('a');
   a.href = url;

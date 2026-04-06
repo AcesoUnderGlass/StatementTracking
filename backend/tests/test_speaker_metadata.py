@@ -11,21 +11,21 @@ from app.services.speaker_metadata import (
 def test_infer_senator_paren_party_locale():
     r = infer_from_title("U.S. Senator (D-CA)")
     assert r["party"] == Party.democrat
-    assert r["locale"] == "CA"
+    assert r["locales"] == ["CA"]
     assert r["chamber"] == Chamber.senate
 
 
 def test_infer_representative_r_texas():
     r = infer_from_title("U.S. Representative (R-TX)")
     assert r["party"] == Party.republican
-    assert r["locale"] == "TX"
+    assert r["locales"] == ["TX"]
     assert r["chamber"] == Chamber.house
 
 
 def test_infer_independent():
     r = infer_from_title("Sen. Jane Doe (I-ME)")
     assert r["party"] == Party.independent
-    assert r["locale"] == "ME"
+    assert r["locales"] == ["ME"]
 
 
 def test_chief_of_staff_no_executive_chamber():
@@ -39,10 +39,10 @@ def test_org_type_clears_legislator_fields():
         type=SpeakerType.think_tank,
         party=Party.democrat,
         chamber=Chamber.senate,
-        locale="CA",
+        locales=["CA"],
     )
     assert enforce_org_person_constraints(p) is True
-    assert p.party is None and p.chamber is None and p.locale is None
+    assert p.party is None and p.chamber is None and p.locales == []
 
 
 def test_enrich_from_role_only():
@@ -53,7 +53,7 @@ def test_enrich_from_role_only():
     )
     assert enrich_person_from_existing_role(p) is True
     assert p.party == Party.democrat
-    assert p.locale == "CA"
+    assert p.locales == ["CA"]
     assert p.chamber == Chamber.senate
 
 
@@ -89,4 +89,4 @@ def test_registry_fills_governor():
     assert enrich_person_from_existing_role(p) is True
     assert p.party == Party.republican
     assert p.chamber == Chamber.executive
-    assert p.locale == "FL"
+    assert p.locales == ["FL"]

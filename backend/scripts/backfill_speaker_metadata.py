@@ -33,7 +33,7 @@ def main() -> None:
             before = (
                 person.party,
                 person.chamber,
-                person.locale,
+                person.locales,
                 person.role,
                 person.type,
             )
@@ -41,7 +41,7 @@ def main() -> None:
                 after = (
                     person.party,
                     person.chamber,
-                    person.locale,
+                    person.locales,
                     person.role,
                     person.type,
                 )
