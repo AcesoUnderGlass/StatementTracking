@@ -79,7 +79,7 @@ class Person(Base):
     party: Mapped[Optional[Party]] = mapped_column(Enum(Party), nullable=True)
     role: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     chamber: Mapped[Optional[Chamber]] = mapped_column(Enum(Chamber), nullable=True)
-    locale: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    locale: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     employer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PersonCreate, SpeakerType } from '../types';
+import LocaleSelect from './LocaleSelect';
 
 interface Props {
   defaultName?: string;
@@ -10,12 +11,6 @@ interface Props {
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 const CHAMBERS = ['Senate', 'House', 'Executive', 'Other'];
-const US_STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
-  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
-  'VA','WA','WV','WI','WY','DC',
-];
 
 const IS_ORG_TYPE = (t: SpeakerType) => t === 'think_tank' || t === 'gov_inst';
 
@@ -111,14 +106,11 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
               {CHAMBERS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            <select
-              value={form.locale || ''}
-              onChange={(e) => update('locale', e.target.value)}
-              className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
-            >
-              <option value="">Locale...</option>
-              {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <LocaleSelect
+              value={form.locale || null}
+              onChange={(v) => update('locale', v)}
+              compact
+            />
           </>
         )}
 

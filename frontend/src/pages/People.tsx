@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchPeople, exportPeople } from '../api/client';
 import ExportButton from '../components/ExportButton';
+import { LocaleChip } from '../components/LocaleSelect';
 
 export default function People() {
   const navigate = useNavigate();
@@ -94,7 +95,9 @@ export default function People() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{p.role || '—'}</td>
-                  <td className="px-4 py-3 text-slate-500">{p.locale || '—'}</td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {p.locale ? <LocaleChip value={p.locale} /> : '—'}
+                  </td>
                   <td className="px-4 py-3 text-right font-medium text-slate-700">
                     {p.quote_count}
                   </td>

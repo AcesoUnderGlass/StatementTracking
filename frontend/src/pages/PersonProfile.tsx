@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchPerson, updatePerson } from '../api/client';
+import LocaleSelect, { LocaleChip } from '../components/LocaleSelect';
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 const CHAMBERS = ['Senate', 'House', 'Executive', 'Other'];
@@ -105,12 +106,12 @@ export default function PersonProfile() {
     );
   }
 
-  const fields: { key: string; label: string; type?: 'select'; options?: string[] }[] = [
+  const fields: { key: string; label: string; type?: 'select' | 'locale'; options?: string[] }[] = [
     { key: 'name', label: 'Name' },
     { key: 'role', label: 'Role' },
     { key: 'party', label: 'Party', type: 'select', options: PARTIES },
     { key: 'chamber', label: 'Chamber', type: 'select', options: CHAMBERS },
-    { key: 'locale', label: 'Locale' },
+    { key: 'locale', label: 'Locale', type: 'locale' },
     { key: 'employer', label: 'Employer' },
     { key: 'notes', label: 'Notes' },
   ];
@@ -133,9 +134,14 @@ export default function PersonProfile() {
       <div className="flex items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">{person.name}</h2>
-          <p className="text-sm text-slate-500">
-            {person.role || person.type} · {person.party || 'No party'}{' '}
-            {person.locale ? `· ${person.locale}` : ''}
+          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+            <span>{person.role || person.type} · {person.party || 'No party'}</span>
+            {person.locale && (
+              <>
+                <span>·</span>
+                <LocaleChip value={person.locale} />
+              </>
+            )}
           </p>
         </div>
         {person.party && (
@@ -157,6 +163,48 @@ export default function PersonProfile() {
           {fields.map((f) => {
             const value = (person as Record<string, any>)[f.key];
             const isEditing = editingField === f.key;
+
+            if (f.type === 'locale') {
+              return (
+                <div key={f.key}>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                    {f.label}
+                  </label>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <LocaleSelect
+                          value={editValue || null}
+                          onChange={(v) => {
+                            mutation.mutate({ [f.key]: v });
+                          }}
+                        />
+                      </div>
+                      <button
+                        onClick={() => setEditingField(null)}
+                        className="px-2.5 py-1.5 text-xs text-slate-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <p
+                      onClick={() => startEdit(f.key, value)}
+                      className="text-sm cursor-pointer group"
+                    >
+                      {value ? (
+                        <LocaleChip value={value} />
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                      <span className="text-slate-300 text-xs ml-2 opacity-0 group-hover:opacity-100">
+                        edit
+                      </span>
+                    </p>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <div key={f.key}>
