@@ -26,6 +26,7 @@ function useUrlPeopleFilters(): [PeopleFilters, (f: PeopleFilters) => void] {
     type: params.get('type') || undefined,
     party: params.get('party') || undefined,
     locale: params.get('locale') || undefined,
+    role: params.get('role') || undefined,
     sort_by: (params.get('sort_by') as PeopleFilters['sort_by']) || undefined,
     sort_dir: (params.get('sort_dir') as PeopleFilters['sort_dir']) || undefined,
   };
@@ -36,6 +37,7 @@ function useUrlPeopleFilters(): [PeopleFilters, (f: PeopleFilters) => void] {
     if (next.type) p.set('type', next.type);
     if (next.party) p.set('party', next.party);
     if (next.locale) p.set('locale', next.locale);
+    if (next.role) p.set('role', next.role);
     if (next.sort_by) p.set('sort_by', next.sort_by);
     if (next.sort_dir) p.set('sort_dir', next.sort_dir);
     setParams(p, { replace: true });
@@ -72,6 +74,14 @@ export default function People() {
           value={filters.search || ''}
           onChange={(e) => update('search', e.target.value)}
           placeholder="Search by name..."
+          className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+
+        <input
+          type="text"
+          value={filters.role || ''}
+          onChange={(e) => update('role', e.target.value)}
+          placeholder="Search by role..."
           className="px-3 bg-white py-2 border border-slate-300 rounded-lg text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
 

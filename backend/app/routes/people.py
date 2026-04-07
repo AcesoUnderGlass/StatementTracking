@@ -22,13 +22,14 @@ def list_people(
     type: Optional[str] = None,
     party: Optional[str] = None,
     locale: Optional[str] = None,
+    role: Optional[str] = None,
     sort_by: Optional[str] = Query(None, pattern="^(name|quote_count|created_at)$"),
     sort_dir: Optional[str] = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
 ):
     results = _build_people_query(
         db, search=search, type=type, party=party, locale=locale,
-        sort_by=sort_by, sort_dir=sort_dir,
+        role=role, sort_by=sort_by, sort_dir=sort_dir,
     ).all()
     return [_person_to_dict(person, count) for person, count in results]
 
@@ -63,6 +64,7 @@ def _build_people_query(
     type: Optional[str] = None,
     party: Optional[str] = None,
     locale: Optional[str] = None,
+    role: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_dir: Optional[str] = "asc",
 ):
@@ -77,6 +79,8 @@ def _build_people_query(
     )
     if search:
         query = query.filter(Person.name.ilike(f"%{search}%"))
+    if role:
+        query = query.filter(Person.role.ilike(f"%{role}%"))
     if type:
         query = query.filter(Person.type == SpeakerType(type))
     if party:
@@ -104,6 +108,7 @@ def export_people(
     type: Optional[str] = None,
     party: Optional[str] = None,
     locale: Optional[str] = None,
+    role: Optional[str] = None,
     sort_by: Optional[str] = Query(None, pattern="^(name|quote_count|created_at)$"),
     sort_dir: Optional[str] = Query("asc", pattern="^(asc|desc)$"),
     format: str = Query("csv"),
@@ -111,7 +116,7 @@ def export_people(
 ):
     results = _build_people_query(
         db, search=search, type=type, party=party, locale=locale,
-        sort_by=sort_by, sort_dir=sort_dir,
+        role=role, sort_by=sort_by, sort_dir=sort_dir,
     ).all()
     rows = [_person_to_dict(person, count) for person, count in results]
     today = date.today().isoformat()

@@ -62,6 +62,7 @@ export interface PeopleFilters {
   type?: string;
   party?: string;
   locale?: string;
+  role?: string;
   sort_by?: 'name' | 'quote_count' | 'created_at';
   sort_dir?: 'asc' | 'desc';
 }
@@ -72,6 +73,7 @@ export function fetchPeople(filters: PeopleFilters = {}): Promise<Person[]> {
   if (filters.type) params.set('type', filters.type);
   if (filters.party) params.set('party', filters.party);
   if (filters.locale) params.set('locale', filters.locale);
+  if (filters.role) params.set('role', filters.role);
   if (filters.sort_by) params.set('sort_by', filters.sort_by);
   if (filters.sort_dir) params.set('sort_dir', filters.sort_dir);
   const qs = params.toString();
@@ -210,6 +212,7 @@ export function exportPeople(filters: PeopleFilters, format: 'csv' | 'json'): vo
   if (filters.type) params.set('type', filters.type);
   if (filters.party) params.set('party', filters.party);
   if (filters.locale) params.set('locale', filters.locale);
+  if (filters.role) params.set('role', filters.role);
   if (filters.sort_by) params.set('sort_by', filters.sort_by);
   if (filters.sort_dir) params.set('sort_dir', filters.sort_dir);
   const url = `${BASE}/people/export?${params}`;
