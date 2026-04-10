@@ -11,7 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
-from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics, SpeakerType, Party, Chamber
+from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics, SpeakerType, Party, Chamber, safe_speaker_type
 from ..schemas import QuoteUpdate, DuplicateCheckRequest, SuggestTagsRequest, SuggestTagsResponse
 from ..services.dedup import check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
@@ -414,7 +414,7 @@ def update_quote(
         else:
             person = Person(
                 name=display_name,
-                type=SpeakerType(new_person_data["type"]),
+                type=safe_speaker_type(new_person_data.get("type")),
                 party=Party(new_person_data["party"]) if new_person_data.get("party") else None,
                 role=new_person_data.get("role"),
                 chamber=Chamber(new_person_data["chamber"]) if new_person_data.get("chamber") else None,

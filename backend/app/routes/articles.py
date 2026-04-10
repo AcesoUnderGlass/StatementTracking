@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction, Topic
+from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction, Topic, safe_speaker_type
 
 from ..schemas import (
     ExtractRequest,
@@ -159,7 +159,7 @@ def save_article(req: SaveRequest, db: Session = Depends(get_db)):
                 else:
                     person = Person(
                         name=display_name,
-                        type=SpeakerType(q.new_person.type),
+                        type=safe_speaker_type(q.new_person.type),
                         party=Party(q.new_person.party) if q.new_person.party else None,
                         role=q.new_person.role,
                         chamber=Chamber(q.new_person.chamber) if q.new_person.chamber else None,
@@ -226,7 +226,6 @@ def check_existing_urls(req: CheckUrlsRequest, db: Session = Depends(get_db)):
 # ── Bulk processing ─────────────────────────────────────────────────────
 
 _FUZZY_THRESHOLD = 0.80
-_VALID_SPEAKER_TYPES = {t.value for t in SpeakerType}
 
 
 def _resolve_person(db: Session, eq: ExtractedQuote, cache: dict[str, int]) -> int:
@@ -246,9 +245,7 @@ def _resolve_person(db: Session, eq: ExtractedQuote, cache: dict[str, int]) -> i
         cache[name_key] = existing.id
         return existing.id
 
-    st_raw = eq.speaker_type
-    st = st_raw if st_raw in _VALID_SPEAKER_TYPES else "elected"
-    person = Person(name=name, type=SpeakerType(st))
+    person = Person(name=name, type=safe_speaker_type(eq.speaker_type))
     db.add(person)
     db.flush()
     enrich_person_from_extracted(person, eq, created=True)
@@ -579,7 +576,7 @@ def add_quote_to_article(
         else:
             person = Person(
                 name=display_name,
-                type=SpeakerType(req.new_person.type),
+                type=safe_speaker_type(req.new_person.type),
                 party=Party(req.new_person.party) if req.new_person.party else None,
                 role=req.new_person.role,
                 chamber=Chamber(req.new_person.chamber) if req.new_person.chamber else None,

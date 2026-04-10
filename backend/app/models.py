@@ -20,6 +20,18 @@ class SpeakerType(str, enum.Enum):
     commercial = "commercial"
 
 
+_VALID_SPEAKER_TYPES = {t.value for t in SpeakerType}
+_DEFAULT_SPEAKER_TYPE = SpeakerType.elected
+
+
+def safe_speaker_type(raw: Optional[str]) -> SpeakerType:
+    """Convert a raw string to SpeakerType, falling back to *elected*
+    when the value is missing or not in the enum (e.g. novel LLM output)."""
+    if raw and raw in _VALID_SPEAKER_TYPES:
+        return SpeakerType(raw)
+    return _DEFAULT_SPEAKER_TYPE
+
+
 class Party(str, enum.Enum):
     democrat = "Democrat"
     republican = "Republican"

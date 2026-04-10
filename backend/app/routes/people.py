@@ -10,7 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Person, Quote, SpeakerType, Party, Chamber
+from ..models import Person, Quote, SpeakerType, Party, Chamber, safe_speaker_type
 from ..schemas import PersonOut, PersonUpdate, QuoteOut, ArticleMetadata, PersonBase
 
 router = APIRouter(prefix="/api/people", tags=["people"])
@@ -82,7 +82,7 @@ def _build_people_query(
     if role:
         query = query.filter(Person.role.ilike(f"%{role}%"))
     if type:
-        query = query.filter(Person.type == SpeakerType(type))
+        query = query.filter(Person.type == safe_speaker_type(type))
     if party:
         query = query.filter(Person.party == Party(party))
     if locale:
@@ -216,7 +216,7 @@ def update_person(
 
     for field, value in update_data.items():
         if field == "type" and value is not None:
-            value = SpeakerType(value)
+            value = safe_speaker_type(value)
         elif field == "party" and value is not None:
             value = Party(value)
         elif field == "chamber" and value is not None:
