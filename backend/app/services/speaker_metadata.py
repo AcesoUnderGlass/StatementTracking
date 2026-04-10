@@ -26,6 +26,7 @@ _E = SpeakerType.elected
 _S = SpeakerType.staff
 _TT = SpeakerType.think_tank
 _GI = SpeakerType.gov_inst
+_C = SpeakerType.commercial
 _D = Party.democrat
 _Rep = Party.republican
 _I = Party.independent
@@ -171,6 +172,28 @@ _SPEAKER_REGISTRY: dict[str, dict[str, Any]] = {
     "ursula owusu-ekuful":              _R(party=_O, role="Ghana Minister of Communications"),
     "martin romualdez":                 _R(party=_O, role="Speaker, Philippine House of Representatives"),
     "antonio guterres":                 _R(party=_O, chamber=_Oth, role="Secretary-General of the United Nations"),
+
+    # ── Commercial / private sector ──────────────────────────────
+    "bill gates":           _R(type=_C, employer="Gates Foundation / Microsoft", role="Co-chair, Gates Foundation"),
+    "elon musk":            _R(type=_C, employer="xAI / Tesla / SpaceX", role="CEO"),
+    "sam altman":           _R(type=_C, employer="OpenAI", role="CEO of OpenAI"),
+    "satya nadella":        _R(type=_C, employer="Microsoft", role="CEO of Microsoft"),
+    "sundar pichai":        _R(type=_C, employer="Google / Alphabet", role="CEO of Alphabet"),
+    "mark zuckerberg":      _R(type=_C, employer="Meta", role="CEO of Meta"),
+    "tim cook":             _R(type=_C, employer="Apple", role="CEO of Apple"),
+    "jensen huang":         _R(type=_C, employer="NVIDIA", role="CEO of NVIDIA"),
+    "dario amodei":         _R(type=_C, employer="Anthropic", role="CEO of Anthropic"),
+    "daniela amodei":       _R(type=_C, employer="Anthropic", role="President of Anthropic"),
+    "demis hassabis":       _R(type=_C, employer="Google DeepMind", role="CEO of Google DeepMind"),
+    "arvind krishna":       _R(type=_C, employer="IBM", role="CEO of IBM"),
+    "brad smith":           _R(type=_C, employer="Microsoft", role="Vice Chair and President of Microsoft"),
+    "eric schmidt":         _R(type=_C, employer="Schmidt Futures", role="Former CEO of Google"),
+    "mustafa suleyman":     _R(type=_C, employer="Microsoft AI", role="CEO of Microsoft AI"),
+    "jeff bezos":           _R(type=_C, employer="Amazon / Blue Origin", role="Founder of Amazon"),
+    "marc benioff":         _R(type=_C, employer="Salesforce", role="CEO of Salesforce"),
+    "pat gelsinger":        _R(type=_C, employer="Intel", role="Former CEO of Intel"),
+    "andy jassy":           _R(type=_C, employer="Amazon", role="CEO of Amazon"),
+    "lisa su":              _R(type=_C, employer="AMD", role="CEO of AMD"),
 }
 
 
@@ -247,7 +270,7 @@ def _registry_row(name: str) -> dict[str, Any] | None:
 
 def enforce_org_person_constraints(person: Person) -> bool:
     """Clear legislator-only fields for non-elected types. Returns True if anything changed."""
-    if person.type not in (SpeakerType.think_tank, SpeakerType.gov_inst, SpeakerType.staff):
+    if person.type not in (SpeakerType.think_tank, SpeakerType.gov_inst, SpeakerType.staff, SpeakerType.commercial):
         return False
     changed = False
     if person.party is not None:
@@ -297,7 +320,7 @@ def enrich_person_from_extracted(person: Person, eq: Any, *, created: bool = Fal
     if apply_registry(person, created=created):
         changed = True
 
-    if person.type in (SpeakerType.think_tank, SpeakerType.gov_inst, SpeakerType.staff):
+    if person.type in (SpeakerType.think_tank, SpeakerType.gov_inst, SpeakerType.staff, SpeakerType.commercial):
         if enforce_org_person_constraints(person):
             changed = True
         return changed
@@ -321,7 +344,7 @@ def enrich_person_from_existing_role(person: Person) -> bool:
     changed = False
     if apply_registry(person, created=False):
         changed = True
-    if person.type in (SpeakerType.think_tank, SpeakerType.gov_inst, SpeakerType.staff):
+    if person.type in (SpeakerType.think_tank, SpeakerType.gov_inst, SpeakerType.staff, SpeakerType.commercial):
         if enforce_org_person_constraints(person):
             changed = True
         return changed

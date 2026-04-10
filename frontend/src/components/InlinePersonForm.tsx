@@ -13,6 +13,7 @@ const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 const CHAMBERS = ['Senate', 'House', 'Executive', 'Other'];
 
 const IS_ORG_TYPE = (t: SpeakerType) => t === 'think_tank' || t === 'gov_inst';
+const HIDES_PARTY_CHAMBER = (t: SpeakerType) => IS_ORG_TYPE(t) || t === 'commercial';
 
 export default function InlinePersonForm({ defaultName = '', defaultType = 'elected', onSave, onCancel }: Props) {
   const [form, setForm] = useState<PersonCreate>({
@@ -29,11 +30,11 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
 
   function update(field: string, value: string | null) {
     const next: Partial<PersonCreate> = { [field]: value || null };
-    if (field === 'type' && value && IS_ORG_TYPE(value as SpeakerType)) {
+    if (field === 'type' && value && HIDES_PARTY_CHAMBER(value as SpeakerType)) {
       next.party = null;
       next.chamber = null;
       next.locales = [];
-      next.employer = null;
+      if (IS_ORG_TYPE(value as SpeakerType)) next.employer = null;
     }
     setForm((prev) => ({ ...prev, ...next }));
   }
@@ -74,9 +75,10 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
           <option value="staff">Staff</option>
           <option value="think_tank">Think Tank</option>
           <option value="gov_inst">Gov. Institution</option>
+          <option value="commercial">Commercial</option>
         </select>
 
-        {!isOrg && (
+        {!HIDES_PARTY_CHAMBER(form.type) && (
           <select
             value={form.party || ''}
             onChange={(e) => update('party', e.target.value)}
@@ -91,11 +93,11 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
           type="text"
           value={form.role || ''}
           onChange={(e) => update('role', e.target.value)}
-          placeholder={isOrg ? 'Description (e.g. Federal Agency)' : 'Role (e.g. Senator)'}
+          placeholder={isOrg ? 'Description (e.g. Federal Agency)' : form.type === 'commercial' ? 'Role (e.g. CEO)' : 'Role (e.g. Senator)'}
           className="px-2.5 py-1.5 border border-slate-300 rounded text-sm"
         />
 
-        {!isOrg && (
+        {!HIDES_PARTY_CHAMBER(form.type) && (
           <>
             <select
               value={form.chamber || ''}
@@ -114,7 +116,7 @@ export default function InlinePersonForm({ defaultName = '', defaultType = 'elec
           </>
         )}
 
-        {form.type === 'staff' && (
+        {(form.type === 'staff' || form.type === 'commercial') && (
           <input
             type="text"
             value={form.employer || ''}

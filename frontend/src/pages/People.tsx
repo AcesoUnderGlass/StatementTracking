@@ -10,6 +10,7 @@ const TYPES: { value: string; label: string }[] = [
   { value: 'staff', label: 'Staff' },
   { value: 'think_tank', label: 'Think Tank' },
   { value: 'gov_inst', label: 'Gov. Institution' },
+  { value: 'commercial', label: 'Commercial' },
 ];
 
 const partyColor: Record<string, string> = {

@@ -17,6 +17,7 @@ class SpeakerType(str, enum.Enum):
     staff = "staff"
     think_tank = "think_tank"
     gov_inst = "gov_inst"
+    commercial = "commercial"
 
 
 class Party(str, enum.Enum):

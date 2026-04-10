@@ -7,6 +7,7 @@ export const TYPE_OPTIONS: Record<string, string> = {
   staff: 'Staff',
   think_tank: 'Think Tank',
   gov_inst: 'Gov. Institution',
+  commercial: 'Commercial',
 };
 const CATEGORY_LABELS: Record<FilterTagCategory, string> = {
   party: 'Party',

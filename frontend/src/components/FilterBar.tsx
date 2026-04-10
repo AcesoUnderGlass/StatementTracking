@@ -75,7 +75,7 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         <option value="staff">Staff</option>
         <option value="think_tank">Think Tank</option>
         <option value="gov_inst">Gov. Institution</option>
-        <option value="gov_inst">Non-Gov</option>
+        <option value="commercial">Commercial</option>
       </select>
 
       <SearchableMultiSelect

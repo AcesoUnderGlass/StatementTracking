@@ -390,7 +390,7 @@ def main() -> None:
 
             if locale is None:
                 t = person.type.value if person.type else "?"
-                if t in ("think_tank", "staff", "elected", "gov_inst"):
+                if t in ("think_tank", "staff", "elected", "gov_inst", "commercial"):
                     locale = "USA"
 
             if locale is None:

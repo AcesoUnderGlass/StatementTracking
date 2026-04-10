@@ -1,4 +1,4 @@
-export type SpeakerType = 'elected' | 'staff' | 'think_tank' | 'gov_inst';
+export type SpeakerType = 'elected' | 'staff' | 'think_tank' | 'gov_inst' | 'commercial';
 export type ReviewStatus = 'approved' | 'pending' | 'rejected';
 
 export interface Person {
