@@ -1,7 +1,7 @@
 """Shared test fixtures for the AI Quote Tracker backend."""
 
 import json
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -37,7 +37,9 @@ def db_session():
 
     @event.listens_for(engine, "connect")
     def _register_now(dbapi_conn, _):
-        dbapi_conn.create_function("now", 0, lambda: datetime.utcnow().isoformat())
+        dbapi_conn.create_function(
+            "now", 0, lambda: datetime.now(UTC).replace(tzinfo=None).isoformat()
+        )
 
     alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
     alembic_cfg.set_main_option(

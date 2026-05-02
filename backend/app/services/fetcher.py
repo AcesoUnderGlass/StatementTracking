@@ -8,6 +8,10 @@ from datetime import date
 from typing import Optional
 from urllib.parse import quote, urlparse
 
+import httpx
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
+
 
 logger = logging.getLogger(__name__)
 
@@ -138,9 +142,6 @@ def _pdf_metadata_title(reader: PdfReader) -> Optional[str]:
 
 
 def _fetch_pdf_article(url: str) -> dict:
-    import httpx
-    from pypdf import PdfReader
-    from pypdf.errors import PdfReadError
 
     headers = {
         "User-Agent": (
@@ -343,8 +344,6 @@ def _fetch_via_jina(url: str) -> dict:
     Used as a fallback when the direct httpx fetch fails — Jina renders
     JavaScript and bypasses many anti-bot protections.
     """
-    import httpx
-
     jina_url = f"https://r.jina.ai/{url}"
     headers: dict[str, str] = {
         "Accept": "application/json",
@@ -489,8 +488,6 @@ def _extract_article_from_html(
 # ---------------------------------------------------------------------------
 
 def _fetch_html_article_direct(url: str) -> dict:
-    import httpx
-
     headers = {
         "User-Agent": _USER_AGENT,
         "Accept": "text/html,*/*;q=0.8",
@@ -566,7 +563,6 @@ def _fetch_via_google_cache(url: str) -> dict:
     Useful when the origin server blocks direct access but Google has a
     recent cached copy of the page.
     """
-    import httpx
     from bs4 import BeautifulSoup
 
     cache_url = (

@@ -196,7 +196,9 @@ class TestArticlesSave:
         assert resp.status_code == 200
         assert resp.json()["quote_count"] == 1
 
-        person = db_session.query(Person).filter(Person.name == "Sen. Jane Doe").first()
+        # canonical_speaker_name() strips the "Sen." prefix before persisting.
+        assert db_session.query(Person).filter(Person.name == "Sen. Jane Doe").first() is None
+        person = db_session.query(Person).filter(Person.name == "Jane Doe").first()
         assert person is not None
         assert person.type.value == "elected"
         assert person.locales == ["NY"]
@@ -213,7 +215,8 @@ class TestArticlesSave:
         assert resp.status_code == 200
         assert resp.json()["quote_count"] == 2
 
-        people = db_session.query(Person).filter(Person.name == "Sen. Jane Doe").all()
+        # Honorific stripped → stored as "Jane Doe", and only one row created.
+        people = db_session.query(Person).filter(Person.name == "Jane Doe").all()
         assert len(people) == 1
 
     async def test_mark_as_duplicate_sets_flag(

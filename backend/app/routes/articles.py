@@ -31,6 +31,8 @@ from ..schemas import (
     AddQuoteRequest,
 )
 from ..services.dedup import find_duplicate, check_duplicates_batch
+from ..services.extractor import extract_quotes, ExtractionError
+from ..services.fetcher import fetch_article, FetchError
 from ..services.jurisdiction_quote import set_quote_jurisdictions
 from ..services.speaker_aliases import canonical_speaker_name
 from ..services.speaker_metadata import enrich_person_from_extracted
@@ -85,9 +87,6 @@ def _raw_to_extracted(q: dict) -> ExtractedQuote:
 
 @router.post("/extract", response_model=ExtractResponse)
 def extract_from_url(req: ExtractRequest, db: Session = Depends(get_db)):
-    from ..services.fetcher import fetch_article, FetchError
-    from ..services.extractor import extract_quotes, ExtractionError
-
     try:
         article_data = fetch_article(req.url)
     except FetchError as e:
@@ -315,9 +314,6 @@ def _fuzzy_match(expected: str, candidates: list[str], threshold: float = _FUZZY
 
 @router.post("/bulk-process-entry", response_model=BulkEntryResult)
 def bulk_process_entry(req: BulkEntryRequest, db: Session = Depends(get_db)):
-    from ..services.fetcher import fetch_article, FetchError
-    from ..services.extractor import extract_quotes, ExtractionError
-
     # 1. Fetch
     try:
         article_data = fetch_article(req.url)
@@ -398,9 +394,6 @@ def bulk_process_entry(req: BulkEntryRequest, db: Session = Depends(get_db)):
 def auto_ingest(req: AutoIngestRequest, db: Session = Depends(get_db)):
     """Simplified endpoint for automated monitors. Accepts a URL, runs the
     full fetch→extract→save pipeline, and marks all quotes as pending."""
-    from ..services.fetcher import fetch_article, FetchError
-    from ..services.extractor import extract_quotes, ExtractionError
-
     existing_article = db.query(Article).filter(Article.url == req.url).first()
     if existing_article:
         return AutoIngestResult(
