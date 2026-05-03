@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import FilterBarHome, { type ViewMode } from '../../components/FilterBarHome';
 import ExportButton from '../../components/ExportButton';
 import EditorialCardTableVersion from './EditorialCardTableVersion';
@@ -103,6 +104,21 @@ const EditorialView = ({
       >
         Admin
       </Link>
+      <div className="fixed top-3 right-3 z-20 flex items-center gap-3">
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button
+              className="text-sm hover:opacity-70 transition"
+              style={{ color: '#aaa' }}
+            >
+              Sign in
+            </button>
+          </SignInButton>
+        </SignedOut>
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
+      </div>
       <div className="text-center mb-8">
         <h2
           className="text-2xl md:text-3xl font-bold tracking-[0.18em] uppercase"
