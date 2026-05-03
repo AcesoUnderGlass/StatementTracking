@@ -6,7 +6,7 @@ from calendar import timegm
 from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..auth import require_admin, require_editor
 from ..database import get_db
@@ -70,6 +70,19 @@ def _as_jurisdiction_list(val) -> list:
     return []
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
+
+
+def _article_to_dict(a: Article) -> dict:
+    return {
+        "id": a.id,
+        "url": a.url,
+        "title": a.title,
+        "publication": a.publication,
+        "published_date": a.published_date.isoformat() if a.published_date else None,
+        "fetched_at": a.fetched_at.isoformat() if a.fetched_at else None,
+        "ingestion_source": a.ingestion_source,
+        "ingestion_source_detail": a.ingestion_source_detail,
+    }
 
 
 def _raw_to_extracted(q: dict) -> ExtractedQuote:
@@ -221,6 +234,44 @@ def check_existing_urls(req: CheckUrlsRequest, db: Session = Depends(get_db)):
         .all()
     )
     return CheckUrlsResponse(existing_urls=[row[0] for row in existing])
+
+
+@router.get("/{article_id}")
+def get_article(
+    article_id: int,
+    include_unapproved: bool = False,
+    include_duplicates: bool = False,
+    db: Session = Depends(get_db),
+):
+    """Return article metadata and its quotes (approved, non-duplicate by default)."""
+    from .quotes import _quote_to_dict
+
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found.")
+
+    quote_q = (
+        db.query(Quote)
+        .options(
+            selectinload(Quote.person),
+            selectinload(Quote.article),
+            selectinload(Quote.jurisdictions),
+            selectinload(Quote.topics),
+        )
+        .filter(Quote.article_id == article_id)
+    )
+    if not include_unapproved:
+        quote_q = quote_q.filter(Quote.review_status == "approved")
+    if not include_duplicates:
+        quote_q = quote_q.filter(Quote.is_duplicate == False)  # noqa: E712
+    quote_q = quote_q.order_by(Quote.date_said.desc().nullslast(), Quote.id)
+
+    quotes = quote_q.all()
+
+    return {
+        **_article_to_dict(article),
+        "quotes": [_quote_to_dict(q) for q in quotes],
+    }
 
 
 # ── Bulk processing ─────────────────────────────────────────────────────

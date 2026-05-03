@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronUp, Link2 } from 'lucide-react';
 import { fetchQuote } from '../../api/client';
@@ -26,6 +27,7 @@ const EditorialCardTableVersionMobile = ({
   onCollapse,
   showPerson = true,
 }: QuoteItemProps & { onCollapse?: () => void }) => {
+  const navigate = useNavigate();
   const [showOriginal, setShowOriginal] = useState(false);
   const quoteText = quote.original_text || quote.quote_text;
   const textFragment = quoteText ? getQuoteTextFragment(quoteText) : '';
@@ -40,8 +42,8 @@ const EditorialCardTableVersionMobile = ({
 
   return (
     <div
-      onClick={onCollapse ? undefined : onToggle}
-      className={`grid min-w-0 grid-cols-1 ${borderClass} group relative${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
+      onClick={onToggle}
+      className={`grid min-w-0 grid-cols-1 ${borderClass} group relative cursor-pointer${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
     >
       {showPerson && (
         <div className="bg-white flex items-start px-3 pt-3 pb-1">
@@ -112,7 +114,11 @@ const EditorialCardTableVersionMobile = ({
         {quote.article?.title && (
           <p
             className="my-1 text-xs text-black font-semibold leading-tight cursor-pointer hover:underline"
-            onClick={(e) => { e.stopPropagation(); onTagClick?.('source', quote.article!.title!); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (quote.article?.id) navigate(`/articles/${quote.article.id}`);
+              else onTagClick?.('source', quote.article!.title!);
+            }}
           >
             {quote.article.title}
           </p>

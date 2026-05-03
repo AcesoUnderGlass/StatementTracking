@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 import { formatEditorialDate, getEditorialCardBorderClass } from './editorialCardHelpers';
 import EditorialCardTags from './EditorialCardTags';
@@ -9,6 +10,7 @@ const EditorialCardCompactDesktop = ({quote, index, onClick, onTagClick, showPer
   onTagClick?: (category: FilterTagCategory, name: string) => void;
   showPerson?: boolean;
 }) => {
+  const navigate = useNavigate();
   const borderClass = getEditorialCardBorderClass(index, showPerson);
   const sourceName = quote.article?.title || quote.article?.publication || null;
   const dateSaidFormatted = formatEditorialDate(quote.date_said);
@@ -42,7 +44,11 @@ const EditorialCardCompactDesktop = ({quote, index, onClick, onTagClick, showPer
         {sourceName && (
           <p
             className="text-xs font-semibold leading-tight line-clamp-2 cursor-pointer hover:underline"
-            onClick={(e) => { e.stopPropagation(); onTagClick?.('source', quote.article!.title!); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (quote.article?.id) navigate(`/articles/${quote.article.id}`);
+              else if (quote.article?.title) onTagClick?.('source', quote.article.title);
+            }}
           >
             {sourceName}
           </p>

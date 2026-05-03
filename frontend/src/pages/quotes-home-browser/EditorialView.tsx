@@ -3,8 +3,8 @@ import FilterBarHome, { type ViewMode } from '../../components/FilterBarHome';
 import ExportButton from '../../components/ExportButton';
 import EditorialCardTableVersion from './EditorialCardTableVersion';
 import EditorialCardCompact from './EditorialCardCompact';
-import type { ViewProps } from './types';
-import { Link } from 'react-router-dom';
+import type { EditFormState, ViewProps } from './types';
+import { Link, useNavigate } from 'react-router-dom';
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 import { addTag } from '../../utils/filterTags';
 import { exportQuotes } from '../../api/client';
@@ -15,6 +15,16 @@ interface CompactGroup {
   startIndex: number;
   sourceName: string | null;
 }
+
+const noop = () => {};
+const noopEditForm = (_: EditFormState) => {};
+const emptyEditForm: EditFormState = {
+  quote_text: '',
+  date_said: '',
+  date_recorded: '',
+  jurisdiction_names: [],
+  topic_names: [],
+};
 
 function groupConsecutiveQuotes(quotes: QuoteWithDetails[]): CompactGroup[] {
   const groups: CompactGroup[] = [];
@@ -48,21 +58,17 @@ const EditorialView = ({
   error,
   jurisdictionOptions,
   topicOptions,
-  expanded,
-  setExpanded,
-  editing,
-  startEdit,
-  cancelEdit,
-  saveEdit,
-  editForm,
-  setEditForm,
-  onDelete,
   totalPages,
 }: ViewProps) => {
+  const navigate = useNavigate();
   const listTopRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('compact');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const compactGroups = useMemo(() => groupConsecutiveQuotes(data?.quotes ?? []), [data?.quotes]);
+
+  const goToQuote = useCallback((quoteId: number) => {
+    navigate(`/quotes/${quoteId}`);
+  }, [navigate]);
 
   function scrollListToTop() {
     listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -149,12 +155,8 @@ const EditorialView = ({
                   {quotesToShow.map((q, gi) => {
                     const globalIdx = group.startIndex + gi;
                     const showPerson = globalIdx === 0 || (gi === 0 && (globalIdx === 0 || q.person?.id !== (data!.quotes[globalIdx - 1]?.person?.id)));
-                    if (expanded === q.id || isGroupExpanded) {
-                      const collapseHandler = expanded === q.id
-                        ? () => setExpanded(null)
-                        : isGroupExpanded
-                        ? () => setExpandedGroups((prev) => { const next = new Set(prev); next.delete(group.key); return next; })
-                        : undefined;
+                    if (isGroupExpanded) {
+                      const collapseHandler = () => setExpandedGroups((prev) => { const next = new Set(prev); next.delete(group.key); return next; });
                       return (
                         <EditorialCardTableVersion
                           key={q.id}
@@ -162,17 +164,17 @@ const EditorialView = ({
                           index={globalIdx}
                           showPerson={showPerson}
                           isSortingByAddedDate={!filters.sort_by || filters.sort_by === 'created_at'}
-                          isEditing={editing === q.id}
-                          editForm={editForm}
-                          setEditForm={setEditForm}
+                          isEditing={false}
+                          editForm={emptyEditForm}
+                          setEditForm={noopEditForm}
                           jurisdictionOptions={jurisdictionOptions}
                           topicOptions={topicOptions}
-                          onToggle={() => {}}
-                          onStartEdit={() => startEdit(q)}
-                          onCancelEdit={cancelEdit}
-                          onSaveEdit={() => saveEdit(q.id)}
-                          onDelete={() => onDelete(q.id)}
-                          onViewOriginal={(id) => setExpanded(id)}
+                          onToggle={() => goToQuote(q.id)}
+                          onStartEdit={() => goToQuote(q.id)}
+                          onCancelEdit={noop}
+                          onSaveEdit={noop}
+                          onDelete={noop}
+                          onViewOriginal={(targetId) => goToQuote(targetId)}
                           onTagClick={handleTagClick}
                           onDateClick={handleDateClick}
                           onCollapse={collapseHandler}
@@ -185,7 +187,7 @@ const EditorialView = ({
                         quote={q}
                         index={globalIdx}
                         showPerson={showPerson}
-                        onClick={() => setExpanded(q.id)}
+                        onClick={() => goToQuote(q.id)}
                         onTagClick={handleTagClick}
                       />
                     );
@@ -214,17 +216,17 @@ const EditorialView = ({
                   index={i}
                   showPerson={showPerson}
                   isSortingByAddedDate={!filters.sort_by || filters.sort_by === 'created_at'}
-                  isEditing={editing === q.id}
-                  editForm={editForm}
-                  setEditForm={setEditForm}
+                  isEditing={false}
+                  editForm={emptyEditForm}
+                  setEditForm={noopEditForm}
                   jurisdictionOptions={jurisdictionOptions}
                   topicOptions={topicOptions}
-                  onToggle={() => setExpanded(expanded === q.id ? null : q.id)}
-                  onStartEdit={() => startEdit(q)}
-                  onCancelEdit={cancelEdit}
-                  onSaveEdit={() => saveEdit(q.id)}
-                  onDelete={() => onDelete(q.id)}
-                  onViewOriginal={(id) => setExpanded(id)}
+                  onToggle={() => goToQuote(q.id)}
+                  onStartEdit={() => goToQuote(q.id)}
+                  onCancelEdit={noop}
+                  onSaveEdit={noop}
+                  onDelete={noop}
+                  onViewOriginal={(targetId) => goToQuote(targetId)}
                   onTagClick={handleTagClick}
                   onDateClick={handleDateClick}
                 />

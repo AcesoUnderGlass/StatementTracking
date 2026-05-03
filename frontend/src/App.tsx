@@ -10,6 +10,8 @@ import { RequireAdmin, RequireSuperadmin } from './auth/Guards';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SubmitArticle = lazy(() => import('./pages/SubmitArticle'));
 const QuotesBrowser = lazy(() => import('./pages/QuotesBrowser'));
+const QuoteDetail = lazy(() => import('./pages/QuoteDetail'));
+const ArticleDetail = lazy(() => import('./pages/ArticleDetail'));
 const People = lazy(() => import('./pages/People'));
 const PersonProfile = lazy(() => import('./pages/PersonProfile'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -32,6 +34,8 @@ export default function App() {
         <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
           <Routes>
             <Route path="/" element={<QuotesHome />} />
+            <Route path="/quotes/:id" element={<QuoteDetail />} />
+            <Route path="/articles/:id" element={<ArticleDetail />} />
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/submit" element={<SubmitArticle />} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronUp, Link2, Pencil } from 'lucide-react';
 import { fetchQuote } from '../../api/client';
@@ -29,6 +30,7 @@ const EditorialCardTableVersionDesktop = ({
   showPerson = true,
 }: QuoteItemProps & { onCollapse?: () => void }) => {
   const canEdit = useCanEdit();
+  const navigate = useNavigate();
   const [showOriginal, setShowOriginal] = useState(false);
   const quoteText = quote.original_text || quote.quote_text;
   const textFragment = quoteText ? getQuoteTextFragment(quoteText) : '';
@@ -43,8 +45,8 @@ const EditorialCardTableVersionDesktop = ({
 
   return (
     <div
-      onClick={onCollapse ? undefined : onToggle}
-      className={`grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] ${borderClass} group relative${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
+      onClick={onToggle}
+      className={`grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)_minmax(0,120px)_minmax(0,250px)] ${borderClass} group relative cursor-pointer${quote.review_status !== 'approved' ? ' bg-amber-50/60' : ''}`}
     >
       {showPerson ? (
         <div className="bg-white flex items-start px-4 pt-5 pb-5">
@@ -115,7 +117,11 @@ const EditorialCardTableVersionDesktop = ({
         {quote.article?.title && (
           <p
             className="mt-0 mb-2 text-xs text-black font-semibold leading-tight cursor-pointer hover:underline"
-            onClick={(e) => { e.stopPropagation(); onTagClick?.('source', quote.article!.title!); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (quote.article?.id) navigate(`/articles/${quote.article.id}`);
+              else onTagClick?.('source', quote.article!.title!);
+            }}
           >
             {quote.article.title}
           </p>

@@ -146,6 +146,18 @@ export interface QuoteListResponse {
   page_size: number;
 }
 
+export interface ArticleDetail {
+  id: number;
+  url: string;
+  title: string | null;
+  publication: string | null;
+  published_date: string | null;
+  fetched_at: string | null;
+  ingestion_source: string | null;
+  ingestion_source_detail: string | null;
+  quotes: QuoteWithDetails[];
+}
+
 export interface Stats {
   total_quotes: number;
   total_people: number;

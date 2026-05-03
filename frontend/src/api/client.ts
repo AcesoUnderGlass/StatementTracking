@@ -1,4 +1,5 @@
 import type {
+  ArticleDetail,
   ArticleMetadata,
   ExtractedQuote,
   ExtractResponse,
@@ -74,6 +75,10 @@ export function saveArticle(data: SaveRequest): Promise<SaveResponse> {
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export function fetchArticle(id: number): Promise<ArticleDetail> {
+  return request(`/articles/${id}`);
 }
 
 // ── People ───────────────────────────────────────────────────────────

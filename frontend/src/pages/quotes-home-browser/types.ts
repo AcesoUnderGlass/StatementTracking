@@ -1,5 +1,5 @@
 import type { QuoteFilters } from '../../api/client';
-import type { FilterTagCategory, JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../../types';
+import type { FilterTagCategory, JurisdictionRow, TopicRow, QuoteListResponse, QuoteWithDetails } from '../../types';
 
 export interface EditFormState {
   quote_text: string;
@@ -17,15 +17,6 @@ export interface ViewProps {
   error: Error | null;
   jurisdictionOptions: JurisdictionRow[];
   topicOptions: TopicRow[];
-  expanded: number | null;
-  setExpanded: (id: number | null) => void;
-  editing: number | null;
-  startEdit: (q: QuoteWithDetails) => void;
-  cancelEdit: () => void;
-  saveEdit: (id: number) => void;
-  editForm: EditFormState;
-  setEditForm: (f: EditFormState) => void;
-  onDelete: (id: number) => void;
   totalPages: number;
 }
 
