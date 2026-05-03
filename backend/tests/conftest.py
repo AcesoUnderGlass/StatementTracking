@@ -14,9 +14,10 @@ from sqlalchemy.pool import StaticPool
 from alembic import command
 from alembic.config import Config
 
+from app.auth import current_user
 from app.database import Base, get_db
 from app.main import app
-from app.models import Article, Chamber, Party, Person, Quote, SpeakerType
+from app.models import Article, Chamber, Party, Person, Quote, SpeakerType, User
 
 from helpers import MOCK_EXTRACTION_RESPONSE, MOCK_ARTICLE_DATA
 
@@ -160,6 +161,77 @@ def sample_article(db_session):
     db_session.commit()
     db_session.refresh(article)
     return article
+
+
+# ── Auth Fixtures ───────────────────────────────────────────────────────
+
+
+def _make_user(
+    db_session,
+    *,
+    email: str,
+    is_editor: bool = False,
+    is_admin: bool = False,
+    is_superadmin: bool = False,
+) -> User:
+    user = User(
+        clerk_user_id=f"user_{email}",
+        email=email,
+        name=email.split("@", 1)[0],
+        is_editor=is_editor or is_admin or is_superadmin,
+        is_admin=is_admin or is_superadmin,
+        is_superadmin=is_superadmin,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def editor_user(db_session) -> User:
+    return _make_user(db_session, email="editor@example.com", is_editor=True)
+
+
+@pytest.fixture
+def admin_user(db_session) -> User:
+    return _make_user(db_session, email="admin@example.com", is_admin=True)
+
+
+@pytest.fixture
+def superadmin_user(db_session) -> User:
+    return _make_user(
+        db_session, email="root@example.com", is_superadmin=True
+    )
+
+
+def _override_auth(user: User) -> None:
+    """Force ``current_user`` to return ``user``, bypassing JWT verification.
+
+    The ``require_editor`` / ``require_admin`` / ``require_superadmin``
+    deps are intentionally left untouched so they evaluate the real
+    role flags on the overridden user; this exercises the gating logic
+    instead of bypassing it.
+    """
+    app.dependency_overrides[current_user] = lambda: user
+
+
+@pytest.fixture
+async def editor_client(client, editor_user):
+    _override_auth(editor_user)
+    yield client
+
+
+@pytest.fixture
+async def admin_client(client, admin_user):
+    _override_auth(admin_user)
+    yield client
+
+
+@pytest.fixture
+async def superadmin_client(client, superadmin_user):
+    _override_auth(superadmin_user)
+    yield client
 
 
 @pytest.fixture

@@ -15,6 +15,7 @@ import { useUrlFilters } from '../hooks/useUrlFilters';
 import type { JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../types';
 import FilterBar from '../components/FilterBar';
 import ExportButton from '../components/ExportButton';
+import { useCanEdit } from '../auth/useMe';
 
 type VariantKey = '0' | '1' | '3';
 
@@ -338,6 +339,7 @@ function ExpandedContent({
   onDelete: () => void;
   onViewOriginal: (id: number) => void;
 }) {
+  const canEdit = useCanEdit();
   const { data: originalQuote } = useQuery({
     queryKey: ['quote', quote.duplicate_of_id],
     queryFn: () => fetchQuote(quote.duplicate_of_id!),
@@ -463,26 +465,28 @@ function ExpandedContent({
           </a>
         </p>
       )}
-      <div className="flex gap-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onStartEdit();
-          }}
-          className={`text-sm ${t.edit} font-medium`}
-        >
-          Edit
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className={`text-sm ${t.del} font-medium`}
-        >
-          Delete
-        </button>
-      </div>
+      {canEdit && (
+        <div className="flex gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartEdit();
+            }}
+            className={`text-sm ${t.edit} font-medium`}
+          >
+            Edit
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className={`text-sm ${t.del} font-medium`}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }

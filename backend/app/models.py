@@ -163,3 +163,45 @@ class Quote(Base):
     topics: Mapped[List["Topic"]] = relationship(
         secondary=quote_topics, lazy="selectin",
     )
+
+
+class User(Base):
+    """A signed-in user, lazily provisioned on first valid Clerk JWT.
+
+    Anonymous traffic never creates a row. Role flags are independent
+    booleans so each gate is a simple OR check; implication
+    (superadmin -> admin -> editor) is enforced in code at write time
+    via ``apply_role_implication``.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    clerk_user_id: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(320), index=True, nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    is_editor: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    is_superadmin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+
+def apply_role_implication(user: "User") -> None:
+    """Force superadmin -> admin -> editor before persisting role changes."""
+    if user.is_superadmin:
+        user.is_admin = True
+    if user.is_admin:
+        user.is_editor = True

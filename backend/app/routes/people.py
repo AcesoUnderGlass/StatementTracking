@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from ..auth import require_editor
 from ..database import get_db
 from ..models import Person, Quote, SpeakerType, Party, Chamber, safe_speaker_type
 from ..schemas import PersonOut, PersonUpdate, QuoteOut, ArticleMetadata, PersonBase
@@ -204,7 +205,7 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
     return {**person_data, "quotes": quotes_data}
 
 
-@router.put("/{person_id}")
+@router.put("/{person_id}", dependencies=[Depends(require_editor)])
 def update_person(
     person_id: int, updates: PersonUpdate, db: Session = Depends(get_db)
 ):

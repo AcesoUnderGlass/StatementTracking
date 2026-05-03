@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchPerson, updatePerson } from '../api/client';
 import LocaleSelect, { LocaleChip } from '../components/LocaleSelect';
+import { useCanEdit } from '../auth/useMe';
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 const CHAMBERS = ['Senate', 'House', 'Executive', 'Other'];
@@ -63,6 +64,7 @@ function PersonQuoteItem({ q }: { q: { id: number; quote_text: string; original_
 export default function PersonProfile() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const canEdit = useCanEdit();
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -82,6 +84,7 @@ export default function PersonProfile() {
   });
 
   function startEdit(field: string, current: string | null) {
+    if (!canEdit) return;
     setEditingField(field);
     setEditValue(current || '');
   }
@@ -191,7 +194,9 @@ export default function PersonProfile() {
                   ) : (
                     <p
                       onClick={() => startEdit(f.key, '')}
-                      className="text-sm cursor-pointer group flex items-center gap-1 flex-wrap"
+                      className={`text-sm flex items-center gap-1 flex-wrap ${
+                        canEdit ? 'cursor-pointer group' : ''
+                      }`}
                     >
                       {localesValue.length > 0 ? (
                         localesValue.map((l: string) => (
@@ -200,9 +205,11 @@ export default function PersonProfile() {
                       ) : (
                         <span className="text-slate-300">—</span>
                       )}
-                      <span className="text-slate-300 text-xs ml-1 opacity-0 group-hover:opacity-100">
-                        edit
-                      </span>
+                      {canEdit && (
+                        <span className="text-slate-300 text-xs ml-1 opacity-0 group-hover:opacity-100">
+                          edit
+                        </span>
+                      )}
                     </p>
                   )}
                 </div>
@@ -252,12 +259,16 @@ export default function PersonProfile() {
                 ) : (
                   <p
                     onClick={() => startEdit(f.key, value)}
-                    className="text-sm text-slate-800 cursor-pointer hover:text-blue-600 group"
+                    className={`text-sm text-slate-800 ${
+                      canEdit ? 'cursor-pointer hover:text-blue-600 group' : ''
+                    }`}
                   >
                     {value || <span className="text-slate-300">—</span>}
-                    <span className="text-slate-300 text-xs ml-2 opacity-0 group-hover:opacity-100">
-                      edit
-                    </span>
+                    {canEdit && (
+                      <span className="text-slate-300 text-xs ml-2 opacity-0 group-hover:opacity-100">
+                        edit
+                      </span>
+                    )}
                   </p>
                 )}
               </div>

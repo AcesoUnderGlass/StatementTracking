@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
+from ..auth import require_admin, require_editor
 from ..database import get_db
 from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics, SpeakerType, Party, Chamber, safe_speaker_type
 from ..schemas import QuoteUpdate, DuplicateCheckRequest, SuggestTagsRequest, SuggestTagsResponse
@@ -390,7 +391,7 @@ def get_quote(quote_id: int, db: Session = Depends(get_db)):
     return _quote_to_dict(quote)
 
 
-@router.put("/{quote_id}")
+@router.put("/{quote_id}", dependencies=[Depends(require_editor)])
 def update_quote(
     quote_id: int, updates: QuoteUpdate, db: Session = Depends(get_db)
 ):
@@ -452,7 +453,7 @@ def update_quote(
     return _quote_to_dict(loaded)
 
 
-@router.delete("/{quote_id}")
+@router.delete("/{quote_id}", dependencies=[Depends(require_editor)])
 def delete_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = db.query(Quote).filter(Quote.id == quote_id).first()
     if not quote:
@@ -462,7 +463,7 @@ def delete_quote(quote_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.put("/{quote_id}/approve")
+@router.put("/{quote_id}/approve", dependencies=[Depends(require_admin)])
 def approve_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = db.query(Quote).filter(Quote.id == quote_id).first()
     if not quote:
@@ -479,7 +480,7 @@ def approve_quote(quote_id: int, db: Session = Depends(get_db)):
     return _quote_to_dict(loaded)
 
 
-@router.put("/{quote_id}/reject")
+@router.put("/{quote_id}/reject", dependencies=[Depends(require_admin)])
 def reject_quote(quote_id: int, db: Session = Depends(get_db)):
     quote = db.query(Quote).filter(Quote.id == quote_id).first()
     if not quote:

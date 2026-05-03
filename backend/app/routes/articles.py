@@ -8,6 +8,7 @@ from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from ..auth import require_admin, require_editor
 from ..database import get_db
 from ..models import Article, Person, SpeakerType, Party, Chamber, Quote, Jurisdiction, Topic, safe_speaker_type
 
@@ -509,7 +510,7 @@ def harvest_feed(req: HarvestFeedRequest):
 
 # ── Batch approve / reject ───────────────────────────────────────────
 
-@router.post("/{article_id}/approve-all")
+@router.post("/{article_id}/approve-all", dependencies=[Depends(require_admin)])
 def approve_all_quotes(article_id: int, db: Session = Depends(get_db)):
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article:
@@ -523,7 +524,7 @@ def approve_all_quotes(article_id: int, db: Session = Depends(get_db)):
     return {"ok": True, "approved_count": count}
 
 
-@router.post("/{article_id}/reject-all")
+@router.post("/{article_id}/reject-all", dependencies=[Depends(require_admin)])
 def reject_all_quotes(article_id: int, db: Session = Depends(get_db)):
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article:
@@ -539,7 +540,7 @@ def reject_all_quotes(article_id: int, db: Session = Depends(get_db)):
 
 # ── Add quote to existing article ────────────────────────────────────
 
-@router.post("/{article_id}/add-quote")
+@router.post("/{article_id}/add-quote", dependencies=[Depends(require_editor)])
 def add_quote_to_article(
     article_id: int,
     req: AddQuoteRequest,

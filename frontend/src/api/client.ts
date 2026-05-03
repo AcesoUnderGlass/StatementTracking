@@ -23,8 +23,29 @@ import type {
 
 const BASE = '/api';
 
+// ── Bearer token plumbing ────────────────────────────────────────────
+//
+// `request` is module-scoped and has no React context, so we accept a
+// getter from the AuthBridge component (which lives inside ClerkProvider
+// and can call useAuth().getToken). Anonymous traffic short-circuits
+// when no getter is registered or it returns null.
+
+type TokenGetter = () => Promise<string | null>;
+
+let getToken: TokenGetter | null = null;
+
+export function setAuthTokenGetter(fn: TokenGetter | null): void {
+  getToken = fn;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  if (!getToken) return {};
+  const token = await getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(await authHeaders()) };
   if (options?.body) {
     headers['Content-Type'] = 'application/json';
   }
@@ -316,7 +337,7 @@ export function fetchStats(): Promise<Stats> {
 // ── Admin ────────────────────────────────────────────────────────────
 
 export async function exportDatabase(): Promise<Blob> {
-  const res = await fetch(`${BASE}/admin/export`);
+  const res = await fetch(`${BASE}/admin/export`, { headers: await authHeaders() });
   if (!res.ok) throw new Error(`Export failed: ${res.status}`);
   return res.blob();
 }
@@ -324,7 +345,11 @@ export async function exportDatabase(): Promise<Blob> {
 export async function importDatabase(file: File): Promise<{ ok: boolean; imported: { people: number; articles: number; quotes: number } }> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${BASE}/admin/import`, { method: 'POST', body: form });
+  const res = await fetch(`${BASE}/admin/import`, {
+    method: 'POST',
+    body: form,
+    headers: await authHeaders(),
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.detail || `Import failed: ${res.status}`);
@@ -381,6 +406,38 @@ export function autoIngestUrl(
       ingestion_source: ingestionSource,
       ingestion_source_detail: ingestionSourceDetail,
     }),
+  });
+}
+
+// ── Users / Auth ────────────────────────────────────────────────────
+
+export interface MeUser {
+  id: number;
+  clerk_user_id: string;
+  email: string;
+  name: string | null;
+  is_editor: boolean;
+  is_admin: boolean;
+  is_superadmin: boolean;
+  created_at: string | null;
+  last_seen_at: string | null;
+}
+
+export function fetchMe(): Promise<MeUser> {
+  return request('/users/me');
+}
+
+export function fetchUsers(): Promise<MeUser[]> {
+  return request('/users');
+}
+
+export function updateUserRole(
+  id: number,
+  patch: { is_editor?: boolean; is_admin?: boolean },
+): Promise<MeUser> {
+  return request(`/users/${id}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
   });
 }
 

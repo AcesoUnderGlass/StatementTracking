@@ -6,10 +6,15 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
+from ..auth import require_admin
 from ..database import get_db
 from ..models import Article, Quote
 
-router = APIRouter(prefix="/api/review", tags=["review"])
+router = APIRouter(
+    prefix="/api/review",
+    tags=["review"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 def _pending_quote_dict(q: Quote) -> dict:

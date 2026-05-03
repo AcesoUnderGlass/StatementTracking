@@ -7,10 +7,15 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
+from ..auth import require_admin
 from ..database import get_db
 from ..models import Article, Person, Quote, Jurisdiction, quote_jurisdictions, Topic, quote_topics
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(
+    prefix="/api/admin",
+    tags=["admin"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 def _serialize_row(obj) -> dict:

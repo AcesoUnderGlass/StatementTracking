@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronUp, Link2, Pencil } from 'lucide-react';
 import { fetchQuote } from '../../api/client';
+import { useCanEdit } from '../../auth/useMe';
 import SharedEditForm from './SharedEditForm';
 import { formatEditorialDate, getEditorialArticleDomain, getEditorialCardBorderClass, getQuoteTextFragment } from './editorialCardHelpers';
 import EditorialCardTags from './EditorialCardTags';
@@ -27,6 +28,7 @@ const EditorialCardTableVersionDesktop = ({
   onCollapse,
   showPerson = true,
 }: QuoteItemProps & { onCollapse?: () => void }) => {
+  const canEdit = useCanEdit();
   const [showOriginal, setShowOriginal] = useState(false);
   const quoteText = quote.original_text || quote.quote_text;
   const textFragment = quoteText ? getQuoteTextFragment(quoteText) : '';
@@ -194,21 +196,23 @@ const EditorialCardTableVersionDesktop = ({
               Added {quote.date_recorded}
             </p>
           </>}
-          <div className="flex gap-3 absolute top-2 right-2 opacity-0 transition-opacity duration-100 cursor-pointer group-hover:opacity-50 hover:opacity-100">
-            <button
-              onClick={(e) => {
-                if (isEditing) onCancelEdit();
-                else {
-                  e.stopPropagation();
-                  onStartEdit();
-                }
-              }}
-              className="text-sm font-medium cursor-pointer "
-              style={{ color: isEditing ? '#9a9287' : '#2a5080' }}
-            >
-              <Pencil size={14} />
-            </button>
-          </div>
+          {canEdit && (
+            <div className="flex gap-3 absolute top-2 right-2 opacity-0 transition-opacity duration-100 cursor-pointer group-hover:opacity-50 hover:opacity-100">
+              <button
+                onClick={(e) => {
+                  if (isEditing) onCancelEdit();
+                  else {
+                    e.stopPropagation();
+                    onStartEdit();
+                  }
+                }}
+                className="text-sm font-medium cursor-pointer "
+                style={{ color: isEditing ? '#9a9287' : '#2a5080' }}
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
         </>
       </div>
       {onCollapse && (

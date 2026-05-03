@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
 import Layout from './components/Layout';
 import QuotesHome from './pages/QuotesHome';
+import AuthBridge from './auth/AuthBridge';
+import { RequireAdmin, RequireSuperadmin } from './auth/Guards';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SubmitArticle = lazy(() => import('./pages/SubmitArticle'));
@@ -14,6 +16,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const BulkSubmit = lazy(() => import('./pages/BulkSubmit'));
 const ReviewQueue = lazy(() => import('./pages/ReviewQueue'));
 const FeedHarvest = lazy(() => import('./pages/FeedHarvest'));
+const Users = lazy(() => import('./pages/Users'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +27,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthBridge />
       <BrowserRouter>
         <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
           <Routes>
@@ -36,8 +40,30 @@ export default function App() {
               <Route path="/people/:id" element={<PersonProfile />} />
               <Route path="/bulk-submit" element={<BulkSubmit />} />
               <Route path="/feed-harvest" element={<FeedHarvest />} />
-              <Route path="/review" element={<ReviewQueue />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route
+                path="/review"
+                element={
+                  <RequireAdmin>
+                    <ReviewQueue />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <RequireAdmin>
+                    <Admin />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <RequireSuperadmin>
+                    <Users />
+                  </RequireSuperadmin>
+                }
+              />
             </Route>
           </Routes>
         </Suspense>
