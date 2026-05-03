@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react';
+import { SignInButton } from '@clerk/clerk-react';
 import { useMe } from '../auth/useMe';
 import { useFavoriteIds, useToggleFavorite } from '../auth/useFavorites';
 
@@ -24,18 +25,22 @@ export default function FavoriteStar({
   const { ids } = useFavoriteIds();
   const toggle = useToggleFavorite();
 
-  if (!me) return null;
+  const isFavorited = !!me && ids.has(quoteId);
 
-  const isFavorited = ids.has(quoteId);
-
-  return (
+  const button = (
     <button
       type="button"
-      aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+      aria-label={
+        !me
+          ? 'Sign in to favorite'
+          : isFavorited
+          ? 'Remove from favorites'
+          : 'Add to favorites'
+      }
       aria-pressed={isFavorited}
       onClick={(e) => {
         if (!bubble) e.stopPropagation();
-        toggle.mutate({ quoteId, next: !isFavorited });
+        if (me) toggle.mutate({ quoteId, next: !isFavorited });
       }}
       className={`inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-amber-50 ${
         isFavorited ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'
@@ -48,4 +53,10 @@ export default function FavoriteStar({
       />
     </button>
   );
+
+  if (!me) {
+    return <SignInButton mode="modal">{button}</SignInButton>;
+  }
+
+  return button;
 }

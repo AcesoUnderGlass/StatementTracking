@@ -15,27 +15,20 @@ if [ ! -f "$REQUIREMENTS_FILE" ]; then
   exit 1
 fi
 
-if [ -x "$ROOT/backend/venv/bin/python" ]; then
-  BACKEND_PYTHON="$ROOT/backend/venv/bin/python"
+if [ ! -x "$ROOT/backend/venv/bin/python" ]; then
+  echo "==> Creating backend virtualenv..."
+  python3 -m venv "$ROOT/backend/venv"
 fi
+BACKEND_PYTHON="$ROOT/backend/venv/bin/python"
 
-if ! "$BACKEND_PYTHON" -m uvicorn --version >/dev/null 2>&1; then
-  if [ "$BACKEND_PYTHON" = "python3" ]; then
-    echo "==> Creating backend virtualenv..."
-    python3 -m venv "$ROOT/backend/venv"
-    BACKEND_PYTHON="$ROOT/backend/venv/bin/python"
-  fi
-  echo "==> Installing backend dependencies..."
-  "$BACKEND_PYTHON" -m pip install -r "$REQUIREMENTS_FILE"
-fi
+echo "==> Installing backend dependencies..."
+"$BACKEND_PYTHON" -m pip install -q -r "$REQUIREMENTS_FILE"
 
-if [ ! -d "$ROOT/frontend/node_modules" ]; then
-  echo "==> Installing frontend dependencies..."
-  (
-    cd "$ROOT/frontend"
-    npm install
-  )
-fi
+echo "==> Installing frontend dependencies..."
+(
+  cd "$ROOT/frontend"
+  npm install --silent
+)
 
 ports_to_free=(8000 5173)
 for port_to_free in "${ports_to_free[@]}"; do
