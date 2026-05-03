@@ -7,6 +7,7 @@ import { useCanEdit } from '../../auth/useMe';
 import SharedEditForm from './SharedEditForm';
 import { formatEditorialDate, getEditorialArticleDomain, getEditorialCardBorderClass, getQuoteTextFragment } from './editorialCardHelpers';
 import EditorialCardTags from './EditorialCardTags';
+import FavoriteStar from '../../components/FavoriteStar';
 import type { QuoteItemProps } from './types';
 
 const EditorialCardTableVersionDesktop = ({
@@ -202,8 +203,8 @@ const EditorialCardTableVersionDesktop = ({
               Added {quote.date_recorded}
             </p>
           </>}
-          {canEdit && (
-            <div className="flex gap-3 absolute top-2 right-2 opacity-0 transition-opacity duration-100 cursor-pointer group-hover:opacity-50 hover:opacity-100">
+          <div className="absolute top-1 right-1 flex items-center gap-1">
+            {canEdit && (
               <button
                 onClick={(e) => {
                   if (isEditing) onCancelEdit();
@@ -212,13 +213,14 @@ const EditorialCardTableVersionDesktop = ({
                     onStartEdit();
                   }
                 }}
-                className="text-sm font-medium cursor-pointer "
+                className="text-sm font-medium cursor-pointer p-1 rounded opacity-0 transition-opacity duration-100 group-hover:opacity-50 hover:opacity-100"
                 style={{ color: isEditing ? '#9a9287' : '#2a5080' }}
               >
                 <Pencil size={14} />
               </button>
-            </div>
-          )}
+            )}
+            <FavoriteStar quoteId={quote.id} size={15} />
+          </div>
         </>
       </div>
       {onCollapse && (

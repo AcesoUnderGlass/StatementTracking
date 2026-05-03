@@ -60,6 +60,11 @@ function parseFiltersFromParams(
     filters.include_unapproved = includeUnapproved === 'true';
   }
 
+  const favoritedOnly = params.get('favorited_only');
+  if (favoritedOnly !== null) {
+    filters.favorited_only = favoritedOnly === 'true';
+  }
+
   return filters;
 }
 
@@ -101,6 +106,9 @@ function filtersToParams(
   }
   if (filters.include_unapproved !== undefined && filters.include_unapproved !== defaults.include_unapproved) {
     params.set('include_unapproved', String(filters.include_unapproved));
+  }
+  if (filters.favorited_only !== undefined && filters.favorited_only !== defaults.favorited_only) {
+    params.set('favorited_only', String(filters.favorited_only));
   }
 
   return params;

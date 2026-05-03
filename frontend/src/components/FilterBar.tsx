@@ -1,5 +1,7 @@
+import { Star } from 'lucide-react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
+import { useMe } from '../auth/useMe';
 import SearchableMultiSelect from './SearchableMultiSelect';
 
 interface Props {
@@ -14,6 +16,8 @@ const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 export const FILTER_BAR_NO_TOPICS_MESSAGE = 'No topics loaded.';
 
 export default function FilterBar({ filters, onChange, jurisdictions, topics }: Props) {
+  const { me } = useMe();
+
   function update(field: keyof QuoteFilters, value: string) {
     onChange({ ...filters, [field]: value || undefined, page: 1 });
   }
@@ -189,6 +193,32 @@ export default function FilterBar({ filters, onChange, jurisdictions, topics }: 
         />
         <span className="text-sm text-slate-600">Show duplicates</span>
       </label>
+
+      {me && (
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              ...filters,
+              favorited_only: filters.favorited_only ? undefined : true,
+              page: 1,
+            })
+          }
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors select-none ${
+            filters.favorited_only
+              ? 'border-amber-300 bg-amber-50 text-amber-700'
+              : 'border-slate-300 bg-white text-slate-600 hover:bg-amber-50/40 hover:border-amber-200'
+          }`}
+          aria-pressed={!!filters.favorited_only}
+        >
+          <Star
+            size={14}
+            strokeWidth={1.75}
+            fill={filters.favorited_only ? 'currentColor' : 'none'}
+          />
+          Only favorites
+        </button>
+      )}
 
       {hasFilters && (
         <button

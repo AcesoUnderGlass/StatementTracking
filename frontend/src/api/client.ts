@@ -137,6 +137,7 @@ export interface QuoteFilters {
   added_to_date?: string;
   include_duplicates?: boolean;
   include_unapproved?: boolean;
+  favorited_only?: boolean;
   sort_by?: 'date_said' | 'created_at' | 'speaker';
   sort_dir?: 'asc' | 'desc';
   page?: number;
@@ -444,6 +445,26 @@ export function updateUserRole(
     method: 'PATCH',
     body: JSON.stringify(patch),
   });
+}
+
+// ── Favorites ───────────────────────────────────────────────────────
+
+export interface FavoriteToggleResponse {
+  favorited: boolean;
+  quote_id: number;
+}
+
+export function favoriteQuote(id: number): Promise<FavoriteToggleResponse> {
+  return request(`/quotes/${id}/favorite`, { method: 'POST' });
+}
+
+export function unfavoriteQuote(id: number): Promise<FavoriteToggleResponse> {
+  return request(`/quotes/${id}/favorite`, { method: 'DELETE' });
+}
+
+export async function fetchFavoriteIds(): Promise<number[]> {
+  const body = await request<{ quote_ids: number[] }>('/users/me/favorites/ids');
+  return body.quote_ids;
 }
 
 // ── Suggest Tags ────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import { useUrlFilters } from '../hooks/useUrlFilters';
 import type { JurisdictionRow, TopicRow, QuoteWithDetails, QuoteListResponse } from '../types';
 import FilterBar from '../components/FilterBar';
 import ExportButton from '../components/ExportButton';
+import FavoriteStar from '../components/FavoriteStar';
 import { useCanEdit } from '../auth/useMe';
 
 type VariantKey = '0' | '1' | '3';
@@ -954,6 +955,10 @@ function EditorialCard({
         &ldquo;
       </div>
 
+      <div className="absolute top-2 left-2 z-10">
+        <FavoriteStar quoteId={quote.id} />
+      </div>
+
       <div className="px-6 py-5 relative">
         <p
           className="leading-relaxed pr-12 italic"
@@ -1547,9 +1552,12 @@ function ClassicQuoteRow({
           </div>
         </td>
         <td className="px-4 py-3">
-          <span className="text-slate-400 text-xs">
-            {isExpanded ? '▲' : '▼'}
-          </span>
+          <div className="flex items-center justify-end gap-1">
+            <FavoriteStar quoteId={quote.id} />
+            <span className="text-slate-400 text-xs">
+              {isExpanded ? '▲' : '▼'}
+            </span>
+          </div>
         </td>
       </tr>
       {isExpanded && (
@@ -1675,6 +1683,7 @@ function OrganicCard({
               Duplicate
             </span>
           )}
+          <FavoriteStar quoteId={quote.id} className="shrink-0" />
         </div>
 
         <p

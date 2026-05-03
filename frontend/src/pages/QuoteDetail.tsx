@@ -10,6 +10,7 @@ import {
   updateQuote,
 } from '../api/client';
 import { useCanEdit } from '../auth/useMe';
+import FavoriteStar from '../components/FavoriteStar';
 import SharedEditForm from './quotes-home-browser/SharedEditForm';
 import {
   formatEditorialDate,
@@ -142,6 +143,10 @@ export default function QuoteDetail() {
                 style={{ fontFamily: 'Playfair Display, serif', color: '#f0e8d8' }}
               >
                 &ldquo;
+              </div>
+
+              <div className="absolute top-3 left-3 z-10">
+                <FavoriteStar quoteId={quote.id} size={20} bubble />
               </div>
 
               <div className="px-6 md:px-10 py-8 relative">

@@ -6,6 +6,7 @@ import { fetchQuote } from '../../api/client';
 import SharedEditForm from './SharedEditForm';
 import { getEditorialArticleDomain, getEditorialCardBorderClass, getQuoteTextFragment, formatEditorialDate } from './editorialCardHelpers';
 import EditorialCardTags from './EditorialCardTags';
+import FavoriteStar from '../../components/FavoriteStar';
 import type { QuoteItemProps } from './types';
 
 const EditorialCardTableVersionMobile = ({
@@ -128,20 +129,23 @@ const EditorialCardTableVersionMobile = ({
             {quote.context}
           </div>
         )} */}
-        {quote.article && (
-          <p className="my-1 text-xs text-blue-600">
-            <a
-              href={`${quote.article.url}${textFragment}`}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span>{articleDomain}</span>
-              <Link2 size={13} className="inline mb-0.5 ml-1" />
-            </a>
-          </p>
-        )}
+        <div className="my-1 flex items-center gap-2">
+          {quote.article && (
+            <p className="text-xs text-blue-600">
+              <a
+                href={`${quote.article.url}${textFragment}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span>{articleDomain}</span>
+                <Link2 size={13} className="inline mb-0.5 ml-1" />
+              </a>
+            </p>
+          )}
+          <FavoriteStar quoteId={quote.id} className="ml-auto" />
+        </div>
         <div
           className="flex items-center gap-3 text-xs"
           style={{ color: '#a09880' }}

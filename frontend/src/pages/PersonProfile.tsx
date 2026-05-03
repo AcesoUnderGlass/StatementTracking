@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchPerson, updatePerson } from '../api/client';
 import LocaleSelect, { LocaleChip } from '../components/LocaleSelect';
+import FavoriteStar from '../components/FavoriteStar';
 import { useCanEdit } from '../auth/useMe';
 
 const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
@@ -12,8 +13,11 @@ function PersonQuoteItem({ q }: { q: { id: number; quote_text: string; original_
   const [showOriginal, setShowOriginal] = useState(false);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-      <blockquote className="text-slate-800 leading-relaxed mb-3 italic border-l-4 border-blue-300 pl-4">
+    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative">
+      <div className="absolute top-2 right-2">
+        <FavoriteStar quoteId={q.id} bubble />
+      </div>
+      <blockquote className="text-slate-800 leading-relaxed mb-3 italic border-l-4 border-blue-300 pl-4 pr-8">
         "{q.quote_text}"
       </blockquote>
       {q.original_text && (

@@ -10,9 +10,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
-from ..auth import require_admin, require_editor
+from ..auth import optional_user, require_admin, require_editor
 from ..database import get_db
-from ..models import Quote, Person, Article, Jurisdiction, Topic, quote_jurisdictions, quote_topics, SpeakerType, Party, Chamber, safe_speaker_type
+from ..models import Quote, Person, Article, Jurisdiction, Topic, QuoteFavorite, User, quote_jurisdictions, quote_topics, SpeakerType, Party, Chamber, safe_speaker_type
 from ..schemas import QuoteUpdate, DuplicateCheckRequest, SuggestTagsRequest, SuggestTagsResponse
 from ..services.dedup import check_duplicates_batch
 from ..services.jurisdiction_quote import set_quote_jurisdictions
@@ -150,6 +150,7 @@ def _build_quotes_query(
     review_status: Optional[str] = "approved",
     sort_by: Optional[str] = None,
     sort_dir: Optional[str] = None,
+    favorited_only_user_id: Optional[int] = None,
 ):
     """Build a filtered + sorted Quote query. Returns (query, total_count)."""
     joined_person = False
@@ -157,6 +158,21 @@ def _build_quotes_query(
 
     if not include_duplicates:
         base = base.filter(Quote.is_duplicate == False)  # noqa: E712
+
+    if favorited_only_user_id is not None:
+        # Restrict to quotes the given user has starred. We use an
+        # ``EXISTS`` subquery rather than a JOIN so the predicate
+        # composes cleanly with the rest of the filters and never
+        # multiplies row counts.
+        fav_subq = (
+            db.query(QuoteFavorite.quote_id)
+            .filter(
+                QuoteFavorite.user_id == favorited_only_user_id,
+                QuoteFavorite.quote_id == Quote.id,
+            )
+            .exists()
+        )
+        base = base.filter(fav_subq)
 
     if review_status and not include_unapproved:
         base = base.filter(Quote.review_status == review_status)
@@ -248,10 +264,30 @@ def list_quotes(
     review_status: Optional[str] = Query("approved"),
     sort_by: Optional[str] = Query(None),
     sort_dir: Optional[str] = Query(None),
+    favorited_only: bool = Query(False),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
+    user: Optional[User] = Depends(optional_user),
 ):
+    # ``favorited_only`` for an anonymous caller is not an error: the
+    # frontend always sends the flag with the user-visible toggle, and
+    # surfacing 401 here would force every list page to special-case
+    # unauthenticated traffic. Returning an empty page lets the same
+    # render path say "no favorites yet" naturally.
+    if favorited_only and user is None:
+        return JSONResponse(
+            content={
+                "quotes": [],
+                "total": 0,
+                "page": page,
+                "page_size": page_size,
+            },
+            headers={"Cache-Control": "private, no-store"},
+        )
+
+    favorited_only_user_id = user.id if (favorited_only and user) else None
+
     base, total = _build_quotes_query(
         db,
         person_id=person_id, person_name=person_name,
@@ -264,9 +300,18 @@ def list_quotes(
         include_unapproved=include_unapproved,
         review_status=review_status,
         sort_by=sort_by, sort_dir=sort_dir,
+        favorited_only_user_id=favorited_only_user_id,
     )
 
     quotes = base.offset((page - 1) * page_size).limit(page_size).all()
+
+    # Don't let the shared CDN cache personalized "favorites only"
+    # responses across users.
+    cache_header = (
+        "private, no-store"
+        if favorited_only_user_id is not None
+        else "public, s-maxage=60, stale-while-revalidate=86400"
+    )
 
     return JSONResponse(
         content={
@@ -275,7 +320,7 @@ def list_quotes(
             "page": page,
             "page_size": page_size,
         },
-        headers={"Cache-Control": "public, s-maxage=60, stale-while-revalidate=86400"},
+        headers={"Cache-Control": cache_header},
     )
 
 CSV_COLUMNS = [

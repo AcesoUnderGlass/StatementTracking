@@ -2,6 +2,7 @@ import { Link2 } from 'lucide-react';
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 import { formatEditorialDate, getEditorialArticleDomain, getEditorialCardBorderClass } from './editorialCardHelpers';
 import EditorialCardTags from './EditorialCardTags';
+import FavoriteStar from '../../components/FavoriteStar';
 
 const EditorialCardCompactMobile = ({quote, index, onClick, onTagClick, showPerson = true}:{
   quote: QuoteWithDetails;
@@ -42,7 +43,7 @@ const EditorialCardCompactMobile = ({quote, index, onClick, onTagClick, showPers
         <div className="flex items-center px-3 pt-0 pb-2">
           <EditorialCardTags quote={quote} onTagClick={onTagClick} limit={2} gapClassName="gap-1" />
         </div>
-        <div className="flex items-center px-3 pt-0 pb-2.5">
+        <div className="flex items-center gap-2 px-3 pt-0 pb-2">
           {articleDomain && quote.article?.url && (
             <p className="text-xs text-blue-600">
               <a
@@ -57,6 +58,7 @@ const EditorialCardCompactMobile = ({quote, index, onClick, onTagClick, showPers
               </a>
             </p>
           )}
+          <FavoriteStar quoteId={quote.id} className="ml-auto" />
         </div>
       </div>
 

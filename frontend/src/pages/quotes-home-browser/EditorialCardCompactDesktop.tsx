@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import type { FilterTagCategory, QuoteWithDetails } from '../../types';
 import { formatEditorialDate, getEditorialCardBorderClass } from './editorialCardHelpers';
 import EditorialCardTags from './EditorialCardTags';
+import FavoriteStar from '../../components/FavoriteStar';
 
 const EditorialCardCompactDesktop = ({quote, index, onClick, onTagClick, showPerson = true}:{
   quote: QuoteWithDetails;
@@ -40,10 +41,10 @@ const EditorialCardCompactDesktop = ({quote, index, onClick, onTagClick, showPer
       <div className="flex items-center py-2">
         <EditorialCardTags quote={quote} onTagClick={onTagClick} limit={2} gapClassName="gap-1" stackInOneColumn />
       </div>
-      <div className="flex items-center py-2 pl-0 pr-6">
-        {sourceName && (
+      <div className="flex items-center justify-between gap-2 py-2 pl-0 pr-4">
+        {sourceName ? (
           <p
-            className="text-xs font-semibold leading-tight line-clamp-2 cursor-pointer hover:underline"
+            className="text-xs font-semibold leading-tight line-clamp-2 cursor-pointer hover:underline min-w-0"
             onClick={(e) => {
               e.stopPropagation();
               if (quote.article?.id) navigate(`/articles/${quote.article.id}`);
@@ -52,7 +53,8 @@ const EditorialCardCompactDesktop = ({quote, index, onClick, onTagClick, showPer
           >
             {sourceName}
           </p>
-        )}
+        ) : <span className="min-w-0" />}
+        <FavoriteStar quoteId={quote.id} className="shrink-0" />
       </div>
     </div>
   );

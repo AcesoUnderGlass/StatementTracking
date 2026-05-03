@@ -205,3 +205,30 @@ def apply_role_implication(user: "User") -> None:
         user.is_admin = True
     if user.is_admin:
         user.is_editor = True
+
+
+class QuoteFavorite(Base):
+    """A signed-in user's star on a quote.
+
+    Composite-PK join row. We don't expose ORM relationships on
+    ``User`` or ``Quote`` because every read path either filters by
+    ``user_id`` (the "is this favorited?" check) or joins through
+    ``quote_id`` (the ``favorited_only`` list filter), and avoiding
+    the back-references keeps the existing list/detail queries free
+    of accidental N+1 loads.
+    """
+
+    __tablename__ = "quote_favorites"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    quote_id: Mapped[int] = mapped_column(
+        ForeignKey("quotes.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )

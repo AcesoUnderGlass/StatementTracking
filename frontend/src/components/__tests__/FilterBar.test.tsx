@@ -3,7 +3,16 @@ import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
+// FilterBar consults useMe() to gate the "Only favorites" toggle. The
+// real hook reaches into Clerk; in this isolated component test we
+// stub it to "not signed in" so the bar renders without a provider.
+vi.mock('../../auth/useMe', () => ({
+  useMe: () => ({ me: null, isLoading: false }),
+  useCanEdit: () => false,
+}));
+
 import FilterBar, { FILTER_BAR_NO_TOPICS_MESSAGE } from '../FilterBar';
 import { fetchTopics, type QuoteFilters } from '../../api/client';
 import type { TopicRow } from '../../types';

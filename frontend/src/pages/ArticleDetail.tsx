@@ -8,6 +8,7 @@ import {
   getEditorialCardTags,
 } from './quotes-home-browser/editorialCardHelpers';
 import { tagPillStyle } from '../utils/filterTags';
+import FavoriteStar from '../components/FavoriteStar';
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -115,12 +116,15 @@ export default function ArticleDetail() {
                         <Link
                           key={q.id}
                           to={`/quotes/${q.id}`}
-                          className="block bg-white border-l-4 rounded-r-lg shadow-sm hover:shadow transition-shadow"
+                          className="block bg-white border-l-4 rounded-r-lg shadow-sm hover:shadow transition-shadow relative"
                           style={{ borderLeftColor: '#c9a84c' }}
                         >
+                          <div className="absolute top-2 right-2 z-10">
+                            <FavoriteStar quoteId={q.id} />
+                          </div>
                           <div className="px-5 md:px-6 py-5">
                             <blockquote
-                              className="text-base md:text-lg leading-relaxed italic"
+                              className="text-base md:text-lg leading-relaxed italic pr-8"
                               style={{ fontFamily: 'Lora, serif', color: '#2d2a26' }}
                             >
                               &ldquo;{q.quote_text}&rdquo;

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Filter as FilterIcon, List, Table2 } from 'lucide-react';
+import { Filter as FilterIcon, List, Star, Table2 } from 'lucide-react';
 import type { QuoteFilters } from '../api/client';
 import type { JurisdictionRow, TopicRow } from '../types';
+import { useMe } from '../auth/useMe';
 import { FILTER_BAR_NO_TOPICS_MESSAGE } from './FilterBar';
 import SearchableMultiSelect from './SearchableMultiSelect';
 import FilterTagPills from './FilterTagPills';
@@ -23,6 +24,7 @@ const PARTIES = ['Democrat', 'Republican', 'Independent', 'Other'];
 
 export default function FilterBarHome({ filters, onChange, jurisdictions, topics, viewMode = 'full', onViewModeChange }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { me } = useMe();
   const activeTags = useMemo(() => filtersToTags(filters, jurisdictions, topics), [filters, jurisdictions, topics]);
   const tagGroups = useMemo(() => buildTagGroups(jurisdictions, topics), [jurisdictions, topics]);
 
@@ -132,6 +134,31 @@ export default function FilterBarHome({ filters, onChange, jurisdictions, topics
             onSelectTag={(tag) => onChange({ ...addTag(filters, tag), search: undefined })}
             onRemoveTag={(tag) => onChange(removeTag(filters, tag))}
           />
+          {me && (
+            <button
+              type="button"
+              onClick={() =>
+                onChange({
+                  ...filters,
+                  favorited_only: filters.favorited_only ? undefined : true,
+                  page: 1,
+                })
+              }
+              className={`h-9 w-9 flex items-center justify-center rounded-md cursor-pointer transition ${
+                filters.favorited_only
+                  ? 'text-amber-500 bg-amber-50'
+                  : 'text-slate-500 hover:text-amber-500 hover:bg-amber-50/40'
+              }`}
+              aria-pressed={!!filters.favorited_only}
+              title={filters.favorited_only ? 'Showing only your favorites' : 'Show only favorites'}
+            >
+              <Star
+                size={16}
+                strokeWidth={1.75}
+                fill={filters.favorited_only ? 'currentColor' : 'none'}
+              />
+            </button>
+          )}
           {onViewModeChange && (
             <button
               type="button"

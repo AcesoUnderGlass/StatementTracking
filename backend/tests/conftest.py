@@ -14,7 +14,7 @@ from sqlalchemy.pool import StaticPool
 from alembic import command
 from alembic.config import Config
 
-from app.auth import current_user
+from app.auth import current_user, optional_user
 from app.database import Base, get_db
 from app.main import app
 from app.models import Article, Chamber, Party, Person, Quote, SpeakerType, User
@@ -206,7 +206,8 @@ def superadmin_user(db_session) -> User:
 
 
 def _override_auth(user: User) -> None:
-    """Force ``current_user`` to return ``user``, bypassing JWT verification.
+    """Force ``current_user`` and ``optional_user`` to return ``user``,
+    bypassing JWT verification.
 
     The ``require_editor`` / ``require_admin`` / ``require_superadmin``
     deps are intentionally left untouched so they evaluate the real
@@ -214,6 +215,7 @@ def _override_auth(user: User) -> None:
     instead of bypassing it.
     """
     app.dependency_overrides[current_user] = lambda: user
+    app.dependency_overrides[optional_user] = lambda: user
 
 
 @pytest.fixture

@@ -5,7 +5,15 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from app.database import DATABASE_URL, Base
-from app.models import Person, Article, Quote, Jurisdiction, quote_jurisdictions  # noqa: F401
+from app.models import (  # noqa: F401
+    Article,
+    Jurisdiction,
+    Person,
+    Quote,
+    QuoteFavorite,
+    User,
+    quote_jurisdictions,
+)
 
 config = context.config
 
